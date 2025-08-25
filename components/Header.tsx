@@ -25,7 +25,7 @@ export default function Header() {
   }
 
   return (
-    <header className="flex justify-between items-center max-w-6xl mx-auto py-6 px-4">
+  <header className="flex justify-between items-center w-full bg-gradient-to-br from-slate-900 to-slate-800 pr-8">
       {/* Logo */}
       <Link href="/" className={`${poppins.className} flex items-center gap-2 text-2xl font-bold text-blue-400`}>
         <span className="w-7 h-7 rounded-full border-2 border-blue-400 flex items-center justify-center text-blue-400">✔</span>

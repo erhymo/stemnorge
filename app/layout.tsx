@@ -3,10 +3,10 @@ import Header from "@/components/Header";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="no">
-      <body className="bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+    <html lang="no" className="bg-gradient-to-br from-slate-900 to-slate-800 text-white min-h-screen">
+      <body className="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen text-white">
         <Header />
-        <main className="max-w-6xl mx-auto px-4">{children}</main>
+        <main>{children}</main>
       </body>
     </html>
   );

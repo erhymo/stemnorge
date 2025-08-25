@@ -9,23 +9,37 @@ const inter = Inter({ subsets: ["latin"], weight: ["400"] });
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
 
   function handleRegister(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!name || !phone || !password) {
-      setMessage("Fyll ut alle felter");
-      return;
-    }
-
-    addUser({ name, phone, password });
-    setMessage("Registrering vellykket! Du kan nå logge inn.");
-    setName("");
-    setPhone("");
-    setPassword("");
+    if (!name || !email || !password) {
+      setMessage("");
+      if (!name || !email || !password) {
+        setMessage("Fyll ut alle felter");
+        return;
+      }
+      try {
+        const res = await fetch("/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setMessage("Registrering vellykket! Du kan nå logge inn.");
+          setName("");
+          setEmail("");
+          setPassword("");
+        } else {
+          setMessage(data.error || "Registrering feilet");
+        }
+      } catch {
+        setMessage("Noe gikk galt");
+      }
   }
 
   return (
@@ -53,10 +67,10 @@ export default function RegisterPage() {
             className="w-full px-4 py-3 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <input
-            type="tel"
-            placeholder="Telefonnummer"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            type="email"
+            placeholder="E-post"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full px-4 py-3 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <input
@@ -73,7 +87,6 @@ export default function RegisterPage() {
             Registrer
           </button>
         </form>
-
         {message && (
           <p className="text-center text-sm text-blue-200 mt-4">{message}</p>
         )}

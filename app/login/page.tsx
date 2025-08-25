@@ -1,3 +1,4 @@
+// ...existing code...
 "use client";
 
 import { useState } from "react";
@@ -9,21 +10,14 @@ const poppins = Poppins({ subsets: ["latin"], weight: ["600"] });
 const inter = Inter({ subsets: ["latin"], weight: ["400"] });
 
 export default function LoginPage() {
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const router = useRouter();
 
   function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    const user = validateUser(phone, password);
-
-    if (user) {
-      loginUser(user);
-      router.push("/"); // send til forsiden
-    } else {
-      setMessage("Feil telefonnummer eller passord");
-    }
+  e.preventDefault();
+  // ...API login håndteres lenger ned...
   }
 
   return (
@@ -43,16 +37,16 @@ export default function LoginPage() {
         </h1>
 
         <form className="flex flex-col gap-6" onSubmit={handleLogin}>
+          <label className="text-lg">E-post</label>
           <input
-            type="tel"
-            placeholder="Telefonnummer"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full px-4 py-3 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          <label className="text-lg">Passord</label>
           <input
             type="password"
-            placeholder="Passord"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full px-4 py-3 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"

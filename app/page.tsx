@@ -9,7 +9,54 @@ const inter = Inter({ subsets: ["latin"], weight: ["400"] });
 
 export default function Home() {
   const [votes, setVotes] = useState(0);
+  const [forVotes, setForVotes] = useState(0);
+  const [motVotes, setMotVotes] = useState(0);
   const [expandedBox, setExpandedBox] = useState<"for" | "mot" | null>(null);
+  type User = { id: number; email: string; name: string };
+  const [user, setUser] = useState<User | null>(null);
+  const [message, setMessage] = useState("");
+  useEffect(() => {
+    async function fetchVotes() {
+      const res = await fetch("/api/votes");
+      const data = await res.json();
+      setVotes(data.total);
+      setForVotes(data.forVotes);
+      setMotVotes(data.motVotes);
+    }
+    fetchVotes();
+    const storedUser = window.localStorage.getItem("user");
+    if (storedUser) setUser(JSON.parse(storedUser));
+  }, []);
+
+  async function handleVote(value: "for" | "mot") {
+    setMessage("");
+    const token = window.localStorage.getItem("token");
+    if (!token) {
+      setMessage("Du må være innlogget for å stemme.");
+      return;
+    }
+    try {
+      const res = await fetch("/api/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, value })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMessage("Din stemme er registrert!");
+        // Oppdater stemmetall
+        const resVotes = await fetch("/api/votes");
+        const dataVotes = await resVotes.json();
+        setVotes(dataVotes.total);
+        setForVotes(dataVotes.forVotes);
+        setMotVotes(dataVotes.motVotes);
+      } else {
+        setMessage(data.error || "Kunne ikke registrere stemme.");
+      }
+    } catch {
+      setMessage("Noe gikk galt");
+    }
+  }
 
   // Nedtelling
   // ...existing code...
@@ -41,17 +88,36 @@ export default function Home() {
           <p className={`text-sm leading-relaxed ${expandedBox === "for" ? "text-lg" : ""}`}>
             Argumentene for kjernekraft: Rimelig energi, klimavennlig, stabil kraftforsyning…
           </p>
+          <div className="mt-6 text-blue-900 font-bold">Stemmer: {forVotes}</div>
         </div>
 
         {/* Stem-knapp */}
         <div className="flex flex-col justify-center items-center">
-          <Link
-            href="/login"
-            className="bg-blue-500 text-white px-14 py-6 rounded-xl text-2xl font-bold hover:bg-blue-600 transform hover:scale-105 transition-all shadow-lg"
-          >
-            STEM
-          </Link>
-          <p className="text-xs text-blue-200 mt-3">Du må logge inn for å stemme</p>
+          {user ? (
+            <>
+              <button
+                className="bg-blue-500 text-white px-14 py-6 rounded-xl text-2xl font-bold hover:bg-blue-600 transform hover:scale-105 transition-all shadow-lg mb-4"
+                onClick={() => handleVote("for")}
+              >
+                STEM FOR
+              </button>
+              <button
+                className="bg-blue-500 text-white px-14 py-6 rounded-xl text-2xl font-bold hover:bg-blue-600 transform hover:scale-105 transition-all shadow-lg"
+                onClick={() => handleVote("mot")}
+              >
+                STEM MOT
+              </button>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="bg-blue-500 text-white px-14 py-6 rounded-xl text-2xl font-bold hover:bg-blue-600 transform hover:scale-105 transition-all shadow-lg"
+            >
+              STEM
+            </Link>
+          )}
+          <p className="text-xs text-blue-200 mt-3">{user ? "Du kan stemme én gang" : "Du må logge inn for å stemme"}</p>
+          {message && <div className="text-red-400 mt-2">{message}</div>}
         </div>
 
         {/* Mot-boks */}
@@ -66,6 +132,7 @@ export default function Home() {
           <p className={`text-sm leading-relaxed ${expandedBox === "mot" ? "text-lg" : ""}`}>
             Argumentene mot kjernekraft: Avfallshåndtering, høye kostnader, sikkerhetsrisiko…
           </p>
+          <div className="mt-6 text-blue-900 font-bold">Stemmer: {motVotes}</div>
         </div>
       </div>
 
