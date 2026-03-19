@@ -1,47 +1,88 @@
-"use client";
+import { notFound } from "next/navigation";
 
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { getVotesForTopic } from "@/lib/users";
+import { getHistoricalIssueView } from "@/lib/issues";
 
-export default function HistorieDetaljPage() {
-  const { id } = useParams();
-  const [votesFor, setVotesFor] = useState(0);
-  const [votesMot, setVotesMot] = useState(0);
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    const votes = getVotesForTopic(id as string);
-    setVotesFor(votes.filter((v) => v.choice === "for").length);
-    setVotesMot(votes.filter((v) => v.choice === "mot").length);
-  }, [id]);
+type HistorieDetaljPageProps = {
+  params: Promise<{ id: string }>;
+};
 
-  const total = votesFor + votesMot;
-  const percentFor = total > 0 ? Math.round((votesFor / total) * 100) : 0;
-  const percentMot = total > 0 ? Math.round((votesMot / total) * 100) : 0;
+export default async function HistorieDetaljPage({ params }: HistorieDetaljPageProps) {
+  const { id } = await params;
+  const issue = await getHistoricalIssueView(id);
+
+  if (!issue) {
+    notFound();
+  }
+
+  const sources = issue.sources ?? [];
 
   return (
-    <div className="py-12">
-      <h1 className="text-3xl font-bold mb-6">Sak #{id}</h1>
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-12 md:py-16">
+      <div className="space-y-4 rounded-[2rem] border border-white/10 bg-white/5 p-8">
+        <p className="text-sm uppercase tracking-[0.3em] text-slate-400">{issue.periodLabel}</p>
+        <h1 className="text-4xl leading-tight text-white md:text-5xl">{issue.question}</h1>
+        <p className="max-w-3xl text-lg leading-8 text-slate-300">{issue.overview}</p>
+      </div>
 
-      <h2 className="text-xl font-semibold mb-2">Argumenter for</h2>
-      <p className="bg-blue-50 text-gray-900 rounded-lg p-4 mb-6">
-        Rimelig energi, klimavennlig, stabil kraftforsyning…
-      </p>
+      <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8">
+        <p className="mb-4 text-sm uppercase tracking-[0.3em] text-slate-400">Bakgrunn</p>
+        <p className="text-base leading-8 text-slate-300">{issue.background}</p>
+      </section>
 
-      <h2 className="text-xl font-semibold mb-2">Argumenter mot</h2>
-      <p className="bg-blue-50 text-gray-900 rounded-lg p-4 mb-6">
-        Avfallshåndtering, høye kostnader, sikkerhetsrisiko…
-      </p>
+      <section className="grid gap-6 md:grid-cols-2">
+        <article className="rounded-[2rem] border border-emerald-300/15 bg-emerald-400/5 p-8">
+          <p className="mb-3 text-sm uppercase tracking-[0.3em] text-emerald-200/80">{issue.supportLabel}</p>
+          <h2 className="mb-4 text-3xl text-white">Argumenter som talte for</h2>
+          <p className="text-base leading-8 text-slate-200">{issue.argumentFor}</p>
+        </article>
 
-      <h2 className="text-xl font-semibold mb-2">Resultat</h2>
-      {total === 0 ? (
-        <p className="text-blue-200">Ingen stemmer registrert ennå.</p>
-      ) : (
-        <p className="text-blue-200">
-          For: {percentFor}% ({votesFor} stemmer) <br />
-          Mot: {percentMot}% ({votesMot} stemmer)
-        </p>
-      )}
+        <article className="rounded-[2rem] border border-rose-300/15 bg-rose-400/5 p-8">
+          <p className="mb-3 text-sm uppercase tracking-[0.3em] text-rose-200/80">{issue.opposeLabel}</p>
+          <h2 className="mb-4 text-3xl text-white">Argumenter som talte imot</h2>
+          <p className="text-base leading-8 text-slate-200">{issue.argumentAgainst}</p>
+        </article>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+        <article className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8">
+          <p className="mb-4 text-sm uppercase tracking-[0.3em] text-slate-400">Publisert resultat</p>
+          <div className="space-y-3 text-base text-slate-300">
+            <div className="flex items-center justify-between">
+              <span>{issue.supportLabel}</span>
+              <span className="font-semibold text-white">{issue.supportPercent}%</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>{issue.opposeLabel}</span>
+              <span className="font-semibold text-white">{issue.opposePercent}%</span>
+            </div>
+          </div>
+        </article>
+
+        <article className="rounded-[2rem] border border-white/10 bg-white/5 p-8">
+          <p className="mb-4 text-sm uppercase tracking-[0.3em] text-slate-400">Kort oppsummering</p>
+          <p className="text-base leading-8 text-slate-200">{issue.resultSummary}</p>
+        </article>
+      </section>
+
+      <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8">
+        <p className="mb-4 text-sm uppercase tracking-[0.3em] text-slate-400">Kilder</p>
+        <div className="grid gap-4 md:grid-cols-2">
+          {sources.map((source) => (
+            <a
+              key={source.title}
+              href={source.url}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-2xl border border-white/10 bg-white/5 p-5 transition hover:border-cyan-300/30 hover:bg-white/7"
+            >
+              <p className="text-sm text-slate-400">{source.publisher}</p>
+              <p className="mt-2 text-base font-medium text-white">{source.title}</p>
+            </a>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

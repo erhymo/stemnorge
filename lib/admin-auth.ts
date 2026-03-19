@@ -1,0 +1,126 @@
+import { timingSafeEqual } from "node:crypto";
+
+import jwt from "jsonwebtoken";
+
+import { getAdminSessionSecret } from "@/lib/env";
+
+export const ADMIN_SESSION_COOKIE_NAME = "stemnorge_admin_session";
+
+const ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 12;
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME?.trim() || "admin";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD?.trim() || "";
+const ADMIN_SESSION_SECRET = getAdminSessionSecret();
+
+export type AdminSession = {
+  role: "admin";
+  username: string;
+};
+
+function safeEqual(left: string, right: string) {
+  const leftBuffer = Buffer.from(left);
+  const rightBuffer = Buffer.from(right);
+
+  if (leftBuffer.length !== rightBuffer.length) {
+    return false;
+  }
+
+  return timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function parseCookieHeader(cookieHeader?: string | string[]) {
+  const rawHeader = Array.isArray(cookieHeader) ? cookieHeader[0] : cookieHeader;
+
+  if (!rawHeader) {
+    return {} as Record<string, string>;
+  }
+
+  return rawHeader.split(";").reduce<Record<string, string>>((cookies, part) => {
+    const [rawName, ...rawValueParts] = part.trim().split("=");
+
+    if (!rawName || rawValueParts.length === 0) {
+      return cookies;
+    }
+
+    cookies[rawName] = decodeURIComponent(rawValueParts.join("="));
+    return cookies;
+  }, {});
+}
+
+export function isAdminConfigured() {
+  return Boolean(ADMIN_PASSWORD);
+}
+
+export function validateAdminCredentials(username: string, password: string) {
+  if (!isAdminConfigured()) {
+    return false;
+  }
+
+  return safeEqual(username.trim(), ADMIN_USERNAME) && safeEqual(password, ADMIN_PASSWORD);
+}
+
+export function createAdminSessionToken(username: string) {
+  return jwt.sign({ role: "admin", username }, ADMIN_SESSION_SECRET, {
+    expiresIn: ADMIN_SESSION_TTL_SECONDS,
+  });
+}
+
+export function verifyAdminSessionToken(token?: string | null) {
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const payload = jwt.verify(token, ADMIN_SESSION_SECRET);
+
+    if (
+      typeof payload !== "object" ||
+      payload === null ||
+      payload.role !== "admin" ||
+      typeof payload.username !== "string"
+    ) {
+      return null;
+    }
+
+    return payload as AdminSession;
+  } catch {
+    return null;
+  }
+}
+
+export function getAdminSessionFromCookieHeader(cookieHeader?: string | string[]) {
+  const cookies = parseCookieHeader(cookieHeader);
+  return verifyAdminSessionToken(cookies[ADMIN_SESSION_COOKIE_NAME]);
+}
+
+export function createAdminSessionCookie(token: string) {
+  const parts = [
+    `${ADMIN_SESSION_COOKIE_NAME}=${encodeURIComponent(token)}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    `Max-Age=${ADMIN_SESSION_TTL_SECONDS}`,
+  ];
+
+  if (process.env.NODE_ENV === "production") {
+    parts.push("Secure");
+  }
+
+  return parts.join("; ");
+}
+
+export function clearAdminSessionCookie() {
+  const parts = [
+    `${ADMIN_SESSION_COOKIE_NAME}=`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    "Max-Age=0",
+    "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+  ];
+
+  if (process.env.NODE_ENV === "production") {
+    parts.push("Secure");
+  }
+
+  return parts.join("; ");
+}

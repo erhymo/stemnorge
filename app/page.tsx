@@ -1,145 +1,129 @@
-"use client";
-
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Poppins, Inter } from "next/font/google";
+import { getCurrentIssueView } from "@/lib/issues";
 
-const poppins = Poppins({ subsets: ["latin"], weight: ["600"] });
-const inter = Inter({ subsets: ["latin"], weight: ["400"] });
+export const dynamic = "force-dynamic";
 
-export default function Home() {
-  const [votes, setVotes] = useState(0);
-  const [forVotes, setForVotes] = useState(0);
-  const [motVotes, setMotVotes] = useState(0);
-  const [expandedBox, setExpandedBox] = useState<"for" | "mot" | null>(null);
-  type User = { id: number; email: string; name: string };
-  const [user, setUser] = useState<User | null>(null);
-  const [message, setMessage] = useState("");
-  useEffect(() => {
-    async function fetchVotes() {
-      const res = await fetch("/api/votes");
-      const data = await res.json();
-      setVotes(data.total);
-      setForVotes(data.forVotes);
-      setMotVotes(data.motVotes);
-    }
-    fetchVotes();
-    const storedUser = window.localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
-  }, []);
+export default async function Home() {
+  const currentIssue = await getCurrentIssueView();
 
-  async function handleVote(value: "for" | "mot") {
-    setMessage("");
-    const token = window.localStorage.getItem("token");
-    if (!token) {
-      setMessage("Du må være innlogget for å stemme.");
-      return;
-    }
-    try {
-      const res = await fetch("/api/vote", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, value })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setMessage("Din stemme er registrert!");
-        // Oppdater stemmetall
-        const resVotes = await fetch("/api/votes");
-        const dataVotes = await resVotes.json();
-        setVotes(dataVotes.total);
-        setForVotes(dataVotes.forVotes);
-        setMotVotes(dataVotes.motVotes);
-      } else {
-        setMessage(data.error || "Kunne ikke registrere stemme.");
-      }
-    } catch {
-      setMessage("Noe gikk galt");
-    }
+  if (!currentIssue) {
+    return (
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-16">
+        <section className="rounded-[2rem] border border-white/10 bg-white/5 p-8 text-center shadow-2xl shadow-cyan-950/20 backdrop-blur">
+          <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Ukens sak</p>
+          <h1 className="mt-4 text-4xl text-white md:text-5xl">Ingen aktiv avstemning akkurat nå</h1>
+          <p className="mt-4 text-lg leading-8 text-slate-300">Neste publisering skjer mandag klokken 06:00. Historikken er fortsatt åpen for alle.</p>
+          <div className="mt-8 flex justify-center">
+            <Link href="/historie" className="rounded-full bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200">Se historikk</Link>
+          </div>
+        </section>
+      </div>
+    );
   }
 
-  // Nedtelling
-  // ...existing code...
-
-  useEffect(() => {
-    setVotes(1234); // dummy tall
-  }, []);
-
-
   return (
-    <main className={`${inter.className} flex flex-col items-center min-h-screen p-6 text-white bg-gradient-to-br from-slate-900 to-slate-800`}>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-12 px-6 py-12 md:py-20">
+      <section className="grid gap-8 lg:grid-cols-[1.3fr_0.7fr] lg:items-start">
+        <div className="space-y-6 rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-2xl shadow-cyan-950/20 backdrop-blur">
+          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
+            <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-emerald-200">
+              Avstemning pågår
+            </span>
+            <span>{currentIssue.periodLabel}</span>
+          </div>
 
-      {/* Tema */}
-      <h1 className={`${poppins.className} text-4xl font-bold text-center mb-4`}>
-        Skal vi bygge ut kjernekraft i Norge?
-      </h1>
+          <div className="space-y-4">
+            <p className="text-sm uppercase tracking-[0.3em] text-cyan-200/80">{currentIssue.title}</p>
+            <h1 className="max-w-4xl text-4xl leading-tight text-white md:text-6xl">{currentIssue.question}</h1>
+            <p className="max-w-3xl text-lg leading-8 text-slate-300">{currentIssue.overview}</p>
+          </div>
 
-      {/* Stemmeseksjon */}
-      <div className="grid grid-cols-3 gap-8 w-full max-w-6xl items-start mt-12">
-        {/* For-boks */}
-        <div className="relative border rounded-xl p-6 bg-blue-50 text-gray-900 shadow-lg min-h-[400px] hover:shadow-blue-200 transition-shadow">
-          <h2 className="text-xl font-bold mb-4">For</h2>
-          <button
-            className="absolute top-3 right-3 text-gray-500"
-            onClick={() => setExpandedBox(expandedBox === "for" ? null : "for")}
-          >
-            {expandedBox === "for" ? "-" : "+"}
-          </button>
-          <p className={`text-sm leading-relaxed ${expandedBox === "for" ? "text-lg" : ""}`}>
-            Argumentene for kjernekraft: Rimelig energi, klimavennlig, stabil kraftforsyning…
-          </p>
-          <div className="mt-6 text-blue-900 font-bold">Stemmer: {forVotes}</div>
-        </div>
-
-        {/* Stem-knapp */}
-        <div className="flex flex-col justify-center items-center">
-          {user ? (
-            <>
-              <button
-                className="bg-blue-500 text-white px-14 py-6 rounded-xl text-2xl font-bold hover:bg-blue-600 transform hover:scale-105 transition-all shadow-lg mb-4"
-                onClick={() => handleVote("for")}
-              >
-                STEM FOR
-              </button>
-              <button
-                className="bg-blue-500 text-white px-14 py-6 rounded-xl text-2xl font-bold hover:bg-blue-600 transform hover:scale-105 transition-all shadow-lg"
-                onClick={() => handleVote("mot")}
-              >
-                STEM MOT
-              </button>
-            </>
-          ) : (
-            <Link
-              href="/login"
-              className="bg-blue-500 text-white px-14 py-6 rounded-xl text-2xl font-bold hover:bg-blue-600 transform hover:scale-105 transition-all shadow-lg"
-            >
-              STEM
+          <div className="flex flex-wrap gap-4">
+            <Link href="/vote" className="rounded-full bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200">
+              Les ferdig og stem
             </Link>
-          )}
-          <p className="text-xs text-blue-200 mt-3">{user ? "Du kan stemme én gang" : "Du må logge inn for å stemme"}</p>
-          {message && <div className="text-red-400 mt-2">{message}</div>}
+            <Link href="/register" className="rounded-full border border-white/12 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/5">
+              Opprett konto
+            </Link>
+          </div>
         </div>
 
-        {/* Mot-boks */}
-        <div className="relative border rounded-xl p-6 bg-blue-50 text-gray-900 shadow-lg min-h-[400px] hover:shadow-blue-200 transition-shadow">
-          <h2 className="text-xl font-bold mb-4">Mot</h2>
-          <button
-            className="absolute top-3 right-3 text-gray-500"
-            onClick={() => setExpandedBox(expandedBox === "mot" ? null : "mot")}
-          >
-            {expandedBox === "mot" ? "-" : "+"}
-          </button>
-          <p className={`text-sm leading-relaxed ${expandedBox === "mot" ? "text-lg" : ""}`}>
-            Argumentene mot kjernekraft: Avfallshåndtering, høye kostnader, sikkerhetsrisiko…
-          </p>
-          <div className="mt-6 text-blue-900 font-bold">Stemmer: {motVotes}</div>
-        </div>
-      </div>
+        <aside className="space-y-4 rounded-[2rem] border border-white/10 bg-slate-900/80 p-6 shadow-xl shadow-slate-950/40">
+          <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Slik fungerer uka</p>
+          <div className="space-y-4 text-sm text-slate-300">
+            <div>
+              <p className="font-medium text-white">Mandag 06:00</p>
+              <p>Ny sak publiseres med bakgrunn, argumenter og kilder.</p>
+            </div>
+            <div>
+              <p className="font-medium text-white">Gjennom uka</p>
+              <p>Innloggede brukere kan stemme anonymt og oppdatere stemmen sin før fristen.</p>
+            </div>
+            <div>
+              <p className="font-medium text-white">Søndag 18:00</p>
+              <p>Avstemningen lukkes og resultatet publiseres offentlig med oppsummering.</p>
+            </div>
+          </div>
+        </aside>
+      </section>
 
-      {/* Footer */}
-      <footer className="mt-20 text-blue-200 text-lg">
-        Totalt stemmer så langt: <span className="font-semibold">{votes}</span>
-      </footer>
-    </main>
+      <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <article className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8">
+          <p className="mb-4 text-sm uppercase tracking-[0.3em] text-slate-400">Bakgrunn</p>
+          <p className="text-base leading-8 text-slate-300 md:text-lg">{currentIssue.background}</p>
+        </article>
+
+        <div className="rounded-[2rem] border border-white/10 bg-gradient-to-b from-cyan-400/10 to-transparent p-8">
+          <p className="mb-4 text-sm uppercase tracking-[0.3em] text-slate-400">Før du stemmer</p>
+          <ul className="space-y-3 text-sm leading-7 text-slate-300">
+            <li>• Alle kan lese saken uten innlogging.</li>
+            <li>• Du må ha verifisert konto for å stemme.</li>
+            <li>• Stemmevalg vises ikke offentlig per person.</li>
+            <li>• Resultatet publiseres først når saken er avsluttet.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-2">
+        <article className="rounded-[2rem] border border-emerald-300/15 bg-emerald-400/5 p-8">
+          <p className="mb-4 text-sm uppercase tracking-[0.3em] text-emerald-200/80">{currentIssue.supportLabel}</p>
+          <h2 className="mb-4 text-3xl text-white">Argumenter som taler for</h2>
+          <p className="text-base leading-8 text-slate-200">{currentIssue.argumentFor}</p>
+        </article>
+
+        <article className="rounded-[2rem] border border-rose-300/15 bg-rose-400/5 p-8">
+          <p className="mb-4 text-sm uppercase tracking-[0.3em] text-rose-200/80">{currentIssue.opposeLabel}</p>
+          <h2 className="mb-4 text-3xl text-white">Argumenter som taler imot</h2>
+          <p className="text-base leading-8 text-slate-200">{currentIssue.argumentAgainst}</p>
+        </article>
+      </section>
+
+      <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Kilder</p>
+            <h2 className="mt-2 text-3xl text-white">Åpent kildegrunnlag</h2>
+          </div>
+          <Link href="/historie" className="text-sm font-medium text-cyan-200 transition hover:text-white">
+            Se tidligere saker
+          </Link>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {currentIssue.sources.map((source) => (
+            <a
+              key={source.title}
+              href={source.url}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-2xl border border-white/10 bg-white/5 p-5 transition hover:border-cyan-300/30 hover:bg-white/7"
+            >
+              <p className="text-sm text-slate-400">{source.publisher}</p>
+              <p className="mt-2 text-base font-medium text-white">{source.title}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+    </div>
   );
 }

@@ -1,55 +1,85 @@
 "use client";
 
 import Link from "next/link";
-import { Poppins } from "next/font/google";
-import { getCurrentUser, logoutUser } from "@/lib/users";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-const poppins = Poppins({ subsets: ["latin"], weight: ["600"] });
+import {
+  clearSession,
+  getStoredUser,
+  notifySessionChanged,
+  SESSION_CHANGED_EVENT,
+  type SessionUser,
+} from "@/lib/session";
 
 export default function Header() {
-  const [user, setUser] = useState<{ name: string } | null>(null);
+  const router = useRouter();
+  const [user, setUser] = useState<SessionUser | null>(null);
 
   useEffect(() => {
-    setUser(getCurrentUser());
-  }, [setUser]);
+    const syncSession = () => {
+      setUser(getStoredUser());
+    };
+
+    syncSession();
+
+    window.addEventListener("storage", syncSession);
+    window.addEventListener(SESSION_CHANGED_EVENT, syncSession);
+
+    return () => {
+      window.removeEventListener("storage", syncSession);
+      window.removeEventListener(SESSION_CHANGED_EVENT, syncSession);
+    };
+  }, []);
 
   function handleLogout() {
-    logoutUser();
+    clearSession();
+    notifySessionChanged();
     setUser(null);
-    if (typeof window !== "undefined") {
-      try {
-        window.location.href = "/"; // refresh forsiden
-      } catch {}
-    }
+    router.push("/");
+    router.refresh();
   }
 
   return (
-  <header className="flex justify-between items-center w-full bg-gradient-to-br from-slate-900 to-slate-800 pr-8">
-      {/* Logo */}
-      <Link href="/" className={`${poppins.className} flex items-center gap-2 text-2xl font-bold text-blue-400`}>
-        <span className="w-7 h-7 rounded-full border-2 border-blue-400 flex items-center justify-center text-blue-400">✔</span>
-        StemNorge
-      </Link>
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/85 backdrop-blur">
+      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4">
+        <Link href="/" className="flex items-center gap-3 text-white">
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-cyan-400/30 bg-cyan-400/10 text-sm font-semibold text-cyan-200">
+            SN
+          </span>
+          <span>
+            <span className="block text-base font-semibold tracking-tight">StemNorge</span>
+            <span className="block text-xs text-slate-400">Ukentlig folkestemme, presentert ryddig</span>
+          </span>
+        </Link>
 
-      {!user ? (
-        <nav className="flex gap-6 text-lg text-blue-100">
-          <Link href="/login" className="hover:text-blue-400">Login</Link>
-          <Link href="/register" className="hover:text-blue-400">Registrer</Link>
-          <Link href="/historie" className="hover:text-blue-400">Historie</Link>
-          <Link href="/gdpr" className="hover:text-blue-400">GDPR</Link>
+        <nav className="flex flex-wrap items-center gap-5 text-sm text-slate-300">
+          <Link href="/" className="transition hover:text-white">Ukens sak</Link>
+          <Link href="/historie" className="transition hover:text-white">Historikk</Link>
+          <Link href="/gdpr" className="transition hover:text-white">Personvern</Link>
+
+          {user ? (
+            <>
+              <Link href="/vote" className="transition hover:text-white">Stem</Link>
+              <span className="text-slate-400">{user.name}</span>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-full border border-white/10 px-4 py-2 text-white transition hover:border-cyan-300/40 hover:bg-white/5"
+              >
+                Logg ut
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="transition hover:text-white">Logg inn</Link>
+              <Link href="/register" className="rounded-full border border-white/10 px-4 py-2 text-white transition hover:border-cyan-300/40 hover:bg-white/5">
+                Registrer deg
+              </Link>
+            </>
+          )}
         </nav>
-      ) : (
-        <div className="flex gap-4 items-center">
-          <span className="text-blue-200">Velkommen, {user.name}</span>
-          <button
-            onClick={handleLogout}
-            className="bg-blue-600 px-4 py-2 rounded-md text-sm hover:bg-blue-700"
-          >
-            Logg ut
-          </button>
-        </div>
-      )}
+      </div>
     </header>
   );
 }

@@ -1,78 +1,127 @@
-"use client";
+import Link from "next/link";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-import { useState } from "react";
+import AdminLogoutButton from "@/components/AdminLogoutButton";
+import AdminIssueForm from "@/components/AdminIssueForm";
+import AdminPlannedIssues from "@/components/AdminPlannedIssues";
+import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-auth";
+import { getCurrentIssueView, getHistoricalIssueViews, getPlannedIssueRecords } from "@/lib/issues";
 
-export default function AdminPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [pw, setPw] = useState("");
-  const [title, setTitle] = useState("");
-  const [forText, setForText] = useState("");
-  const [motText, setMotText] = useState("");
-  const [message, setMessage] = useState("");
+export const dynamic = "force-dynamic";
 
-  function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    if (pw === "Bringeland") {
-      setIsLoggedIn(true);
-    } else {
-      setMessage("Feil passord");
-    }
+function formatDateTimeLabel(value: string | Date) {
+  const date = value instanceof Date ? value : new Date(value);
+
+  return new Intl.DateTimeFormat("nb-NO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(date);
+}
+
+export default async function AdminPage() {
+  const cookieStore = await cookies();
+  const session = verifyAdminSessionToken(cookieStore.get(ADMIN_SESSION_COOKIE_NAME)?.value);
+
+  if (!session) {
+    redirect("/admin/login");
   }
 
-  function handleNewTopic(e: React.FormEvent) {
-    e.preventDefault();
-    // Dummy: bare vis melding (senere lagres i Firebase)
-    setMessage(`Ny sak opprettet: ${title}`);
-    setTitle("");
-    setForText("");
-    setMotText("");
-  }
+  const [currentIssue, plannedIssues, historicalIssues] = await Promise.all([
+    getCurrentIssueView(),
+    getPlannedIssueRecords(),
+    getHistoricalIssueViews(),
+  ]);
 
-  if (!isLoggedIn) {
-    return (
-      <div className="py-20 max-w-md mx-auto">
-        <h1 className="text-3xl font-bold mb-6">Admin login</h1>
-        <form onSubmit={handleLogin} className="flex flex-col gap-4">
-          <input
-            type="password"
-            placeholder="Passord"
-            value={pw}
-            onChange={(e) => setPw(e.target.value)}
-            className="px-4 py-3 rounded bg-slate-700 text-white"
-          />
-          <button className="bg-blue-500 py-3 rounded hover:bg-blue-600">Logg inn</button>
-        </form>
-        {message && <p className="mt-4 text-red-400">{message}</p>}
-      </div>
-    );
-  }
+  const plannedIssueItems = plannedIssues.map((issue) => ({
+    id: issue.id,
+    slug: issue.slug,
+    title: issue.title,
+    question: issue.question,
+    overview: issue.overview,
+    background: issue.background,
+    argumentFor: issue.argumentFor,
+    argumentAgainst: issue.argumentAgainst,
+    supportLabel: issue.supportLabel,
+    opposeLabel: issue.opposeLabel,
+    publishedAt: issue.publishedAt.toISOString(),
+    closesAt: issue.closesAt.toISOString(),
+  }));
+
+  const recentIssues = historicalIssues.slice(0, 3);
 
   return (
-    <div className="py-20 max-w-lg mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Adminpanel</h1>
-      <form onSubmit={handleNewTopic} className="flex flex-col gap-4">
-        <input
-          type="text"
-          placeholder="Tittel"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="px-4 py-3 rounded bg-slate-700 text-white"
-        />
-        <textarea
-          placeholder="Argumenter for"
-          value={forText}
-          onChange={(e) => setForText(e.target.value)}
-          className="px-4 py-3 rounded bg-slate-700 text-white"
-        />
-        <textarea
-          placeholder="Argumenter mot"
-          value={motText}
-          onChange={(e) => setMotText(e.target.value)}
-          className="px-4 py-3 rounded bg-slate-700 text-white"
-        />
-        <button className="bg-green-500 py-3 rounded hover:bg-green-600">Lagre sak</button>
-      </form>
-      {message && <p className="mt-4 text-blue-400">{message}</p>}
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-12 md:py-16">
+      <section className="space-y-4 rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-2xl shadow-cyan-950/20 backdrop-blur">
+        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-300">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-emerald-200">Beskyttet adminflate</span>
+            <span>Innlogget som {session.username}. Tilgangen verifiseres nå på serveren.</span>
+          </div>
+          <AdminLogoutButton />
+        </div>
+        <h1 className="text-4xl leading-tight text-white md:text-5xl">Planlegg publisering og lukking av saker manuelt</h1>
+        <p className="max-w-3xl text-lg leading-8 text-slate-300">
+          Denne versjonen lar deg generere et førsteutkast med AI, deretter opprette, redigere og slette planlagte saker med publiseringstid og stengetid.
+          Overlappende tidsvinduer avvises, slik at bare én sak kan være aktiv om gangen.
+        </p>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+        <AdminIssueForm />
+
+        <div className="space-y-6">
+          <article className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8">
+            <div className="mb-4 flex items-end justify-between gap-4">
+              <div>
+                <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Aktiv sak</p>
+                <h2 className="mt-2 text-2xl text-white">{currentIssue?.question ?? "Ingen aktiv sak akkurat nå"}</h2>
+              </div>
+              <Link href="/" className="text-sm font-medium text-cyan-200 transition hover:text-white">
+                Se offentlig visning
+              </Link>
+            </div>
+
+            <div className="space-y-3 text-sm leading-7 text-slate-300">
+              <p>{currentIssue?.overview ?? "Når neste sak publiseres, vil den vises her med åpning og stengetid."}</p>
+              {currentIssue ? (
+                <>
+                  <p className="text-slate-400">Publisert: {formatDateTimeLabel(currentIssue.publishedAt)}</p>
+                  <p className="text-slate-400">Lukkes: {formatDateTimeLabel(currentIssue.closesAt)}</p>
+                </>
+              ) : null}
+            </div>
+          </article>
+
+          <AdminPlannedIssues issues={plannedIssueItems} />
+        </div>
+      </section>
+
+      <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Nylig avsluttede saker</p>
+            <h2 className="mt-2 text-3xl text-white">Historikken følger nå faktisk stengetid</h2>
+          </div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          {recentIssues.map((issue) => (
+            <article key={issue.id} className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
+              <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Lukket {formatDateTimeLabel(issue.closesAt)}</p>
+              <h3 className="mt-3 text-lg text-white">{issue.question}</h3>
+              <p className="mt-3 text-sm leading-7 text-slate-300">{issue.resultSummary ?? issue.overview}</p>
+              <p className="mt-4 text-sm text-slate-200">
+                Resultat: {issue.supportPercent ?? 0}% / {issue.opposePercent ?? 0}%
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

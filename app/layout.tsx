@@ -1,12 +1,34 @@
+import type { Metadata } from "next";
+import { Fraunces, Inter } from "next/font/google";
+
 import "./globals.css";
+import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-serif",
+});
+
+export const metadata: Metadata = {
+  title: "StemNorge",
+  description: "Les ukens sak, ta stilling og stem anonymt når avstemningen er åpen.",
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="no" className="bg-gradient-to-br from-slate-900 to-slate-800 text-white min-h-screen">
-      <body className="bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen text-white">
+    <html lang="no" className={`${inter.variable} ${fraunces.variable}`}>
+      <body className="min-h-screen bg-slate-950 text-slate-100 antialiased">
         <Header />
-        <main>{children}</main>
+        <div className="flex min-h-screen flex-col">
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </div>
       </body>
     </html>
   );
