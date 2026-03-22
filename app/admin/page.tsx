@@ -7,7 +7,7 @@ import AdminIssueForm from "@/components/AdminIssueForm";
 import AdminPlannedIssues from "@/components/AdminPlannedIssues";
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-auth";
 import { getCurrentIssueView, getHistoricalIssueViews, getPlannedIssueRecords } from "@/lib/issues";
-import { getAgendaTips } from "@/lib/tips";
+import { getAgendaTipsForAdmin } from "@/lib/tips";
 
 export const dynamic = "force-dynamic";
 
@@ -32,12 +32,13 @@ export default async function AdminPage() {
     redirect("/admin/login");
   }
 
-  const [currentIssue, plannedIssues, historicalIssues, agendaTips] = await Promise.all([
+  const [currentIssue, plannedIssues, historicalIssues, agendaTipsResult] = await Promise.all([
     getCurrentIssueView(),
     getPlannedIssueRecords(),
     getHistoricalIssueViews(),
-    getAgendaTips(),
+    getAgendaTipsForAdmin(),
   ]);
+  const { tips: agendaTips, unavailable: agendaTipsUnavailable } = agendaTipsResult;
 
   const plannedIssueItems = plannedIssues.map((issue) => ({
     id: issue.id,
@@ -111,6 +112,12 @@ export default async function AdminPage() {
           </div>
           <p className="text-sm text-slate-400">{agendaTips.length} mottatt</p>
         </div>
+
+        {agendaTipsUnavailable ? (
+          <p className="mb-4 rounded-[1.5rem] border border-amber-400/20 bg-amber-400/10 px-5 py-4 text-sm leading-7 text-amber-100">
+            Agenda-tips er midlertidig utilgjengelige i admin fordi databasen i production mangler siste tips-tabell. Resten av adminflaten fungerer fortsatt.
+          </p>
+        ) : null}
 
         {agendaTips.length ? (
           <div className="space-y-4">

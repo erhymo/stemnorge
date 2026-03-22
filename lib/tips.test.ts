@@ -11,7 +11,7 @@ const { prismaMock } = vi.hoisted(() => ({
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
-import { createAgendaTip, getAgendaTips } from "./tips";
+import { createAgendaTip, getAgendaTips, getAgendaTipsForAdmin } from "./tips";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -47,5 +47,25 @@ describe("tips", () => {
       take: 10,
     });
     expect(result).toEqual([{ id: 2 }, { id: 1 }]);
+  });
+
+  it("lar admin-siden fortsette når AgendaTip-tabellen mangler", async () => {
+    prismaMock.agendaTip.findMany.mockRejectedValue(
+      Object.assign(new Error("AgendaTip table does not exist"), {
+        code: "P2021",
+        meta: { modelName: "AgendaTip" },
+      }),
+    );
+
+    await expect(getAgendaTipsForAdmin()).resolves.toEqual({
+      tips: [],
+      unavailable: true,
+    });
+  });
+
+  it("skjuler ikke andre feil når admin henter tips", async () => {
+    prismaMock.agendaTip.findMany.mockRejectedValue(new Error("database offline"));
+
+    await expect(getAgendaTipsForAdmin()).rejects.toThrow("database offline");
   });
 });

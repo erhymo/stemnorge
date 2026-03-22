@@ -12,8 +12,34 @@ type GetAgendaTipsOptions = {
   status?: AgendaTipStatus;
 };
 
+export type AgendaTipsAdminResult = {
+  tips: AgendaTip[];
+  unavailable: boolean;
+};
+
+type PrismaErrorWithCode = {
+  code?: unknown;
+  meta?: {
+    modelName?: unknown;
+  };
+};
+
 function clampTipLimit(limit: number) {
   return Math.min(Math.max(limit, 1), 100);
+}
+
+function isAgendaTipStorageUnavailableError(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const { code, meta } = error as PrismaErrorWithCode;
+
+  if (code !== "P2021" && code !== "P2022") {
+    return false;
+  }
+
+  return meta?.modelName === undefined || meta.modelName === "AgendaTip";
 }
 
 export function validateAgendaTipMessage(value: string) {
@@ -56,4 +82,22 @@ export async function getAgendaTips(options: GetAgendaTipsOptions = {}) {
     orderBy: { createdAt: "desc" },
     take: clampTipLimit(limit),
   });
+}
+
+export async function getAgendaTipsForAdmin(options: GetAgendaTipsOptions = {}): Promise<AgendaTipsAdminResult> {
+  try {
+    return {
+      tips: await getAgendaTips(options),
+      unavailable: false,
+    };
+  } catch (error) {
+    if (isAgendaTipStorageUnavailableError(error)) {
+      return {
+        tips: [],
+        unavailable: true,
+      };
+    }
+
+    throw error;
+  }
 }
