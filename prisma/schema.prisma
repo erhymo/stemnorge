@@ -54,6 +54,16 @@ model Issue {
   votes                  Vote[]
 }
 
+model AgendaTip {
+  id        Int      @id @default(autoincrement())
+  message   String
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+}
+
 model Vote {
   id        Int      @id @default(autoincrement())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

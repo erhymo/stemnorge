@@ -7,6 +7,7 @@ import AdminIssueForm from "@/components/AdminIssueForm";
 import AdminPlannedIssues from "@/components/AdminPlannedIssues";
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-auth";
 import { getCurrentIssueView, getHistoricalIssueViews, getPlannedIssueRecords } from "@/lib/issues";
+import { getAgendaTips } from "@/lib/tips";
 
 export const dynamic = "force-dynamic";
 
@@ -31,10 +32,11 @@ export default async function AdminPage() {
     redirect("/admin/login");
   }
 
-  const [currentIssue, plannedIssues, historicalIssues] = await Promise.all([
+  const [currentIssue, plannedIssues, historicalIssues, agendaTips] = await Promise.all([
     getCurrentIssueView(),
     getPlannedIssueRecords(),
     getHistoricalIssueViews(),
+    getAgendaTips(),
   ]);
 
   const plannedIssueItems = plannedIssues.map((issue) => ({
@@ -99,6 +101,34 @@ export default async function AdminPage() {
 
           <AdminPlannedIssues issues={plannedIssueItems} />
         </div>
+      </section>
+
+      <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8">
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Tips fra forsiden</p>
+            <h2 className="mt-2 text-3xl text-white">Innkommende agenda-tips</h2>
+          </div>
+          <p className="text-sm text-slate-400">{agendaTips.length} mottatt</p>
+        </div>
+
+        {agendaTips.length ? (
+          <div className="space-y-4">
+            {agendaTips.map((tip) => (
+              <article key={tip.id} className="rounded-[1.5rem] border border-white/10 bg-white/5 p-5">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-400">
+                  <span className="rounded-full border border-cyan-300/20 bg-cyan-400/10 px-3 py-1 text-cyan-100">Nytt tips</span>
+                  <span>Mottatt {formatDateTimeLabel(tip.createdAt)}</span>
+                </div>
+                <p className="whitespace-pre-wrap text-base leading-8 text-slate-200">{tip.message}</p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-[1.5rem] border border-dashed border-white/10 bg-white/5 px-5 py-6 text-sm leading-7 text-slate-400">
+            Ingen tips er mottatt ennå. Når noen sender inn et tips fra forsiden, dukker det opp her.
+          </p>
+        )}
       </section>
 
       <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8">

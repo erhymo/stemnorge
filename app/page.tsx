@@ -13,8 +13,9 @@ export default async function Home() {
           <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Ukens sak</p>
           <h1 className="mt-4 text-4xl text-white md:text-5xl">Ingen aktiv avstemning akkurat nå</h1>
           <p className="mt-4 text-lg leading-8 text-slate-300">Neste publisering skjer mandag klokken 06:00. Historikken er fortsatt åpen for alle.</p>
-          <div className="mt-8 flex justify-center">
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link href="/historie" className="rounded-full bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200">Se historikk</Link>
+            <Link href="/tips" className="rounded-full border border-white/12 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/5">Tips oss om saker</Link>
           </div>
         </section>
       </div>
@@ -44,6 +45,9 @@ export default async function Home() {
             </Link>
             <Link href="/register" className="rounded-full border border-white/12 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/5">
               Opprett konto
+            </Link>
+            <Link href="/tips" className="rounded-full border border-cyan-300/30 bg-cyan-400/5 px-6 py-3 text-sm font-semibold text-cyan-100 transition hover:border-cyan-200 hover:text-white">
+              Tips oss om saker
             </Link>
           </div>
         </div>
