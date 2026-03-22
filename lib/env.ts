@@ -51,3 +51,11 @@ export function getAdminSessionSecret() {
 export function getSmsCodeSecret() {
   return readSecret("SMS_CODE_SECRET", ["JWT_SECRET"]);
 }
+
+export function getOpenAiApiKey() {
+  return readEnv("OPENAI_API_KEY");
+}
+
+export function getOpenAiModel() {
+  return readEnv("OPENAI_MODEL") || "gpt-4.1-mini";
+}

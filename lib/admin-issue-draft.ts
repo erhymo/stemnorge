@@ -1,5 +1,12 @@
 import type { CreateIssueInput } from "@/lib/issues";
 
+import { getOpenAiApiKey, getOpenAiModel } from "@/lib/env";
+import {
+  ISSUE_ARGUMENT_MIN_LENGTH,
+  ISSUE_BACKGROUND_MIN_LENGTH,
+  ISSUE_OVERVIEW_MIN_LENGTH,
+} from "@/lib/issue-text-guidelines";
+
 export type AdminIssueDraft = Pick<
   CreateIssueInput,
   "slug" | "title" | "question" | "overview" | "background" | "argumentFor" | "argumentAgainst" | "supportLabel" | "opposeLabel"
@@ -8,6 +15,13 @@ export type AdminIssueDraft = Pick<
 export type GenerateAdminIssueDraftInput = {
   topic: string;
   context?: string;
+};
+
+export type DraftGenerationSource = "openai" | "fallback";
+
+export type GeneratedAdminIssueDraft = {
+  draft: AdminIssueDraft;
+  source: DraftGenerationSource;
 };
 
 const NORWEGIAN_SLUG_REPLACEMENTS: Record<string, string> = {
@@ -21,6 +35,22 @@ const NORWEGIAN_SLUG_REPLACEMENTS: Record<string, string> = {
 
 function normalizeWhitespace(value: string) {
   return value.trim().replace(/\s+/g, " ");
+}
+
+function normalizeGeneratedParagraph(value: string) {
+  return value
+    .trim()
+    .replace(/\r\n/g, "\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n");
+}
+
+function normalizeParagraphs(value: string) {
+  return value
+    .split(/\n\s*\n/g)
+    .map((paragraph) => normalizeWhitespace(paragraph))
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 function stripTrailingPunctuation(value: string) {
@@ -62,7 +92,113 @@ export function toAdminIssueSlug(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-export function generateAdminIssueDraft({ topic, context }: GenerateAdminIssueDraftInput): AdminIssueDraft {
+function ensureQuestion(value: string, fallback: string) {
+  const normalizedValue = normalizeWhitespace(value);
+
+  if (!normalizedValue) {
+    return fallback;
+  }
+
+  if (normalizedValue.endsWith("?")) {
+    return normalizedValue;
+  }
+
+  return `${stripTrailingPunctuation(normalizedValue)}?`;
+}
+
+function readGeneratedField(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+  return typeof value === "string" ? value : "";
+}
+
+function ensureGeneratedSection(candidate: string, fallback: string, minLength: number) {
+  const normalizedCandidate = normalizeParagraphs(normalizeGeneratedParagraph(candidate));
+  return normalizedCandidate.length >= minLength ? normalizedCandidate : fallback;
+}
+
+function mergeGeneratedDraft(candidate: Record<string, unknown>, fallbackDraft: AdminIssueDraft): AdminIssueDraft {
+  const title = normalizeWhitespace(readGeneratedField(candidate, "title")) || fallbackDraft.title;
+
+  return {
+    slug: toAdminIssueSlug(title) || fallbackDraft.slug,
+    title,
+    question: ensureQuestion(readGeneratedField(candidate, "question"), fallbackDraft.question),
+    overview: ensureGeneratedSection(readGeneratedField(candidate, "overview"), fallbackDraft.overview, ISSUE_OVERVIEW_MIN_LENGTH),
+    background: ensureGeneratedSection(readGeneratedField(candidate, "background"), fallbackDraft.background, ISSUE_BACKGROUND_MIN_LENGTH),
+    argumentFor: ensureGeneratedSection(readGeneratedField(candidate, "argumentFor"), fallbackDraft.argumentFor, ISSUE_ARGUMENT_MIN_LENGTH),
+    argumentAgainst: ensureGeneratedSection(readGeneratedField(candidate, "argumentAgainst"), fallbackDraft.argumentAgainst, ISSUE_ARGUMENT_MIN_LENGTH),
+    supportLabel: fallbackDraft.supportLabel,
+    opposeLabel: fallbackDraft.opposeLabel,
+  };
+}
+
+async function requestOpenAiDraft(input: GenerateAdminIssueDraftInput, apiKey: string) {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: getOpenAiModel(),
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "Du lager førsteutkast til politiske saker for en norsk stemmeapp. Skriv på norsk bokmål. Vær nøktern, balansert, konkret og pedagogisk. Målet er at leseren skal forstå hva saken handler om og hvilke hensyn som står mot hverandre. Ikke finn på konkrete fakta, tall, vedtak eller kilder. Hvis du er usikker, skriv generelt og forklar typiske avveininger. Skriv overview som en informativ ingress på 2-4 setninger. Skriv background i 2-4 korte avsnitt. Skriv argumentFor og argumentAgainst i 2-3 korte avsnitt hver. Returner kun gyldig JSON med feltene title, question, overview, background, argumentFor og argumentAgainst.",
+        },
+        {
+          role: "user",
+          content: JSON.stringify({
+            topic: input.topic,
+            context: input.context || "",
+            requirements: {
+              title: "Kort og tydelig tittel på norsk.",
+              question: "Én nøytral spørsmålstekst som velgeren skal ta stilling til.",
+              overview: "2-4 setninger som forklarer hva saken gjelder og hvorfor temaet er relevant for velgeren.",
+              background:
+                "2-4 korte avsnitt som forklarer bakgrunn, dagens situasjon, hvorfor saken diskuteres, og hvilke hensyn som står mot hverandre. Ikke bruk udokumenterte fakta.",
+              argumentFor:
+                "2-3 korte avsnitt som beskriver hvorfor noen kan støtte saken, hvilke gevinster de ser for seg, og hvilke problemer de mener tiltaket kan løse.",
+              argumentAgainst:
+                "2-3 korte avsnitt som beskriver hvorfor noen kan være skeptiske, hvilke risikoer eller kostnader de ser, og hvilke alternative prioriteringer de kan mene er bedre.",
+            },
+          }),
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenAI svarte med ${response.status}.`);
+  }
+
+  const payload = (await response.json()) as {
+    choices?: Array<{
+      message?: {
+        content?: string | null;
+      };
+    }>;
+  };
+
+  const content = payload.choices?.[0]?.message?.content;
+
+  if (!content) {
+    throw new Error("OpenAI returnerte ikke noe innhold.");
+  }
+
+  const parsed = JSON.parse(content) as unknown;
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("OpenAI returnerte ugyldig JSON-format.");
+  }
+
+  return parsed as Record<string, unknown>;
+}
+
+export function generateLocalAdminIssueDraft({ topic, context }: GenerateAdminIssueDraftInput): AdminIssueDraft {
   const normalizedTopic = normalizeTopic(topic);
 
   if (!normalizedTopic) {
@@ -78,16 +214,56 @@ export function generateAdminIssueDraft({ topic, context }: GenerateAdminIssueDr
     title: capitalizeFirst(normalizedTopic),
     question: getQuestionFromTopic(normalizedTopic),
     overview: normalizedContext
-      ? `Denne saken handler om ${topicLower}.${contextSentence}`
-      : `Denne saken handler om ${topicLower} og gir et førsteutkast til hva velgerne skal ta stilling til.`,
+      ? `Denne saken handler om ${topicLower}. ${capitalizeFirst(normalizedContext)}. Utkastet bør gjøre det tydelig hva velgeren faktisk skal ta stilling til, og hvorfor temaet vekker politisk debatt.`
+      : `Denne saken handler om ${topicLower}. Utkastet bør gjøre det tydelig hva velgerne faktisk skal ta stilling til, hvorfor temaet er relevant akkurat nå, og hvilke hensyn som gjør spørsmålet krevende.`,
     background: normalizedContext
-      ? `Bakgrunnen bør forklare dagens situasjon, hvilke mål som ønskes oppnådd og hvilke konsekvenser ${topicLower} kan få.${contextSentence}`
-      : `Bakgrunnen bør forklare dagens situasjon, hvilke mål som ønskes oppnådd og hvilke konsekvenser ${topicLower} kan få.`,
+      ? [
+          `Saken om ${topicLower} handler ikke bare om et enkelt ja-eller-nei-spørsmål, men om hvilke mål samfunnet ønsker å prioritere og hvilke konsekvenser ulike valg kan få over tid. ${capitalizeFirst(topicLower)} kan berøre både økonomi, trygghet, rettferdighet og tillit, avhengig av hvordan tiltaket utformes.${contextSentence}`,
+          `For velgeren er det derfor viktig å forstå hva dagens situasjon er, hvilke problemer tilhengerne mener må løses, og hvilke avveininger som følger med. Et godt bakteppe bør gjøre det lettere å se hvorfor saken engasjerer og hvorfor flere hensyn kan trekke i ulike retninger.`,
+          `Når temaet vurderes, er det også naturlig å spørre hvem som blir mest berørt, hvor raskt eventuelle effekter kan komme, og om et nytt tiltak vil fungere bedre enn å justere det som allerede finnes i dag.`,
+        ].join("\n\n")
+      : [
+          `Saken om ${topicLower} handler ikke bare om et enkelt ja-eller-nei-spørsmål, men om hvilke mål samfunnet ønsker å prioritere og hvilke konsekvenser ulike valg kan få over tid. ${capitalizeFirst(topicLower)} kan berøre både økonomi, trygghet, rettferdighet og tillit, avhengig av hvordan tiltaket utformes.`,
+          `For velgeren er det derfor viktig å forstå hva dagens situasjon er, hvilke problemer tilhengerne mener må løses, og hvilke avveininger som følger med. Et godt bakteppe bør gjøre det lettere å se hvorfor saken engasjerer og hvorfor flere hensyn kan trekke i ulike retninger.`,
+          `Når temaet vurderes, er det også naturlig å spørre hvem som blir mest berørt, hvor raskt eventuelle effekter kan komme, og om et nytt tiltak vil fungere bedre enn å justere det som allerede finnes i dag.`,
+        ].join("\n\n"),
     argumentFor: normalizedContext
-      ? `Tilhengere vil kunne mene at ${topicLower} gir tydeligere prioritering og kan svare på utfordringer som allerede er synlige.${contextSentence}`
-      : `Tilhengere vil kunne mene at ${topicLower} gir tydeligere prioritering, raskere fremdrift og ønsket samfunnseffekt.`,
-    argumentAgainst: `Motstandere vil kunne mene at effekten er usikker, at kostnadene kan bli høyere enn ventet og at andre tiltak bør vurderes før man går videre med ${topicLower}.`,
+      ? [
+          `Tilhengere vil kunne mene at ${topicLower} er et nødvendig grep fordi dagens utvikling ikke løser utfordringen godt nok. De kan hevde at et tydeligere politisk valg gjør det enklere å prioritere ressurser, sette retning og vise hva samfunnet faktisk ønsker å oppnå.${contextSentence}`,
+          `Et argument for kan også være at tiltaket skaper mer forutsigbarhet for dem som blir berørt. Hvis målene er klare og innsatsen samles bedre, kan det gi raskere fremdrift, tydeligere ansvar og større sjanse for at problemet tas på alvor.`,
+          `Noen vil i tillegg mene at det er bedre å handle mens utfordringen fortsatt kan påvirkes, enn å vente til kostnadene, konfliktene eller skadevirkningene blir større og vanskeligere å håndtere.`,
+        ].join("\n\n")
+      : [
+          `Tilhengere vil kunne mene at ${topicLower} er et nødvendig grep fordi dagens utvikling ikke løser utfordringen godt nok. De kan hevde at et tydeligere politisk valg gjør det enklere å prioritere ressurser, sette retning og vise hva samfunnet faktisk ønsker å oppnå.`,
+          `Et argument for kan også være at tiltaket skaper mer forutsigbarhet for dem som blir berørt. Hvis målene er klare og innsatsen samles bedre, kan det gi raskere fremdrift, tydeligere ansvar og større sjanse for at problemet tas på alvor.`,
+          `Noen vil i tillegg mene at det er bedre å handle mens utfordringen fortsatt kan påvirkes, enn å vente til kostnadene, konfliktene eller skadevirkningene blir større og vanskeligere å håndtere.`,
+        ].join("\n\n"),
+    argumentAgainst: [
+      `Motstandere vil kunne mene at effekten av ${topicLower} er mer usikker enn tilhengerne antyder. De kan være bekymret for at politiske løfter ser gode ut i prinsippet, men blir dyrere, mindre treffsikre eller mer krevende å gjennomføre i praksis.`,
+      `Et annet motargument er at nye tiltak ofte kan få utilsiktede virkninger. Når staten, kommunen eller andre aktører endrer kurs, kan det påvirke fordeling, prioriteringer og handlingsrom på måter som ikke er enkle å forutse på forhånd.`,
+      `Noen vil derfor mene at det er klokere å forbedre eksisterende ordninger, samle mer kunnskap eller prøve mindre inngrep først, før man binder seg til et større skifte knyttet til ${topicLower}.`,
+    ].join("\n\n"),
     supportLabel: "For",
     opposeLabel: "Mot",
   };
+}
+
+export async function generateAdminIssueDraft(input: GenerateAdminIssueDraftInput): Promise<GeneratedAdminIssueDraft> {
+  const fallbackDraft = generateLocalAdminIssueDraft(input);
+  const openAiApiKey = getOpenAiApiKey();
+
+  if (!openAiApiKey) {
+    return { draft: fallbackDraft, source: "fallback" };
+  }
+
+  try {
+    const generatedDraft = await requestOpenAiDraft(input, openAiApiKey);
+    return {
+      draft: mergeGeneratedDraft(generatedDraft, fallbackDraft),
+      source: "openai",
+    };
+  } catch (error) {
+    console.error("OpenAI-utkast feilet, bruker reservegenerator i stedet.", error);
+    return { draft: fallbackDraft, source: "fallback" };
+  }
 }

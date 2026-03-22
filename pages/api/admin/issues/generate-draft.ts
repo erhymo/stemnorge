@@ -30,8 +30,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const draft = generateAdminIssueDraft({ topic, context: context || undefined });
-    res.status(200).json({ draft });
+    const result = await generateAdminIssueDraft({ topic, context: context || undefined });
+    res.status(200).json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Kunne ikke generere utkast.";
     res.status(400).json({ error: message });

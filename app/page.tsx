@@ -1,4 +1,6 @@
 import Link from "next/link";
+
+import RichTextBlock from "@/components/RichTextBlock";
 import { getCurrentIssueView } from "@/lib/issues";
 
 export const dynamic = "force-dynamic";
@@ -74,7 +76,7 @@ export default async function Home() {
       <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <article className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8">
           <p className="mb-4 text-sm uppercase tracking-[0.3em] text-slate-400">Bakgrunn</p>
-          <p className="text-base leading-8 text-slate-300 md:text-lg">{currentIssue.background}</p>
+          <RichTextBlock text={currentIssue.background} className="space-y-4 text-base leading-8 text-slate-300 md:text-lg" />
         </article>
 
         <div className="rounded-[2rem] border border-white/10 bg-gradient-to-b from-cyan-400/10 to-transparent p-8">
@@ -92,13 +94,13 @@ export default async function Home() {
         <article className="rounded-[2rem] border border-emerald-300/15 bg-emerald-400/5 p-8">
           <p className="mb-4 text-sm uppercase tracking-[0.3em] text-emerald-200/80">{currentIssue.supportLabel}</p>
           <h2 className="mb-4 text-3xl text-white">Argumenter som taler for</h2>
-          <p className="text-base leading-8 text-slate-200">{currentIssue.argumentFor}</p>
+          <RichTextBlock text={currentIssue.argumentFor} className="space-y-4 text-base leading-8 text-slate-200" />
         </article>
 
         <article className="rounded-[2rem] border border-rose-300/15 bg-rose-400/5 p-8">
           <p className="mb-4 text-sm uppercase tracking-[0.3em] text-rose-200/80">{currentIssue.opposeLabel}</p>
           <h2 className="mb-4 text-3xl text-white">Argumenter som taler imot</h2>
-          <p className="text-base leading-8 text-slate-200">{currentIssue.argumentAgainst}</p>
+          <RichTextBlock text={currentIssue.argumentAgainst} className="space-y-4 text-base leading-8 text-slate-200" />
         </article>
       </section>
 

@@ -37,16 +37,19 @@ function createResponse() {
 beforeEach(() => {
   vi.clearAllMocks();
   getAdminSessionMock.mockReturnValue({ role: "admin", username: "admin" });
-  generateAdminIssueDraftMock.mockReturnValue({
-    slug: "framtidig-sak",
-    title: "Fremtidig sak",
-    question: "Bør Norge prioritere dette?",
-    overview: "Oversikt",
-    background: "Bakgrunn",
-    argumentFor: "For",
-    argumentAgainst: "Mot",
-    supportLabel: "For",
-    opposeLabel: "Mot",
+  generateAdminIssueDraftMock.mockResolvedValue({
+    source: "openai",
+    draft: {
+      slug: "framtidig-sak",
+      title: "Fremtidig sak",
+      question: "Bør Norge prioritere dette?",
+      overview: "Oversikt",
+      background: "Bakgrunn",
+      argumentFor: "For",
+      argumentAgainst: "Mot",
+      supportLabel: "For",
+      opposeLabel: "Mot",
+    },
   });
 });
 
@@ -99,6 +102,7 @@ describe("/api/admin/issues/generate-draft", () => {
     });
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({
+      source: "openai",
       draft: expect.objectContaining({ slug: "framtidig-sak", title: "Fremtidig sak" }),
     });
   });

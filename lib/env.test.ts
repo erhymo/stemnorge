@@ -4,6 +4,8 @@ import {
   EnvironmentConfigurationError,
   getAdminSessionSecret,
   getJwtSecret,
+  getOpenAiApiKey,
+  getOpenAiModel,
   getSmsCodeSecret,
 } from "./env";
 
@@ -11,6 +13,8 @@ const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
 const ORIGINAL_JWT_SECRET = process.env.JWT_SECRET;
 const ORIGINAL_ADMIN_SESSION_SECRET = process.env.ADMIN_SESSION_SECRET;
 const ORIGINAL_SMS_CODE_SECRET = process.env.SMS_CODE_SECRET;
+const ORIGINAL_OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const ORIGINAL_OPENAI_MODEL = process.env.OPENAI_MODEL;
 
 function setNodeEnv(value: string | undefined) {
   Reflect.set(process.env, "NODE_ENV", value);
@@ -21,6 +25,8 @@ afterEach(() => {
   process.env.JWT_SECRET = ORIGINAL_JWT_SECRET;
   process.env.ADMIN_SESSION_SECRET = ORIGINAL_ADMIN_SESSION_SECRET;
   process.env.SMS_CODE_SECRET = ORIGINAL_SMS_CODE_SECRET;
+  process.env.OPENAI_API_KEY = ORIGINAL_OPENAI_API_KEY;
+  process.env.OPENAI_MODEL = ORIGINAL_OPENAI_MODEL;
 });
 
 describe("env", () => {
@@ -53,5 +59,20 @@ describe("env", () => {
 
     expect(getAdminSessionSecret()).toBe("veldig-hemmelig");
     expect(getSmsCodeSecret()).toBe("veldig-hemmelig");
+  });
+
+  it("leser OpenAI-oppsett uten å kreve det i production", () => {
+    setNodeEnv("production");
+    delete process.env.OPENAI_API_KEY;
+    process.env.OPENAI_MODEL = "gpt-4.1-mini";
+
+    expect(getOpenAiApiKey()).toBeNull();
+    expect(getOpenAiModel()).toBe("gpt-4.1-mini");
+  });
+
+  it("bruker standardmodell når OPENAI_MODEL mangler", () => {
+    delete process.env.OPENAI_MODEL;
+
+    expect(getOpenAiModel()).toBe("gpt-4.1-mini");
   });
 });

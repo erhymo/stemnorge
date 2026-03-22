@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import RichTextBlock from "@/components/RichTextBlock";
 import { type IssueView } from "@/lib/issues";
 import {
   clearSession,
@@ -106,13 +107,13 @@ export default function VoteClient({ issue }: VoteClientProps) {
         <button type="button" onClick={() => handleVote("for")} disabled={isSubmitting} className="rounded-[2rem] border border-emerald-300/15 bg-emerald-400/5 p-8 text-left transition hover:bg-emerald-400/10 disabled:cursor-not-allowed disabled:opacity-70">
           <p className="mb-3 text-sm uppercase tracking-[0.3em] text-emerald-200/80">{issue.supportLabel}</p>
           <h2 className="mb-4 text-3xl text-white">Stem for forslaget</h2>
-          <p className="text-base leading-8 text-slate-200">{issue.argumentFor}</p>
+          <RichTextBlock text={issue.argumentFor} className="space-y-4 text-base leading-8 text-slate-200" />
         </button>
 
         <button type="button" onClick={() => handleVote("mot")} disabled={isSubmitting} className="rounded-[2rem] border border-rose-300/15 bg-rose-400/5 p-8 text-left transition hover:bg-rose-400/10 disabled:cursor-not-allowed disabled:opacity-70">
           <p className="mb-3 text-sm uppercase tracking-[0.3em] text-rose-200/80">{issue.opposeLabel}</p>
           <h2 className="mb-4 text-3xl text-white">Stem mot forslaget</h2>
-          <p className="text-base leading-8 text-slate-200">{issue.argumentAgainst}</p>
+          <RichTextBlock text={issue.argumentAgainst} className="space-y-4 text-base leading-8 text-slate-200" />
         </button>
       </section>
 

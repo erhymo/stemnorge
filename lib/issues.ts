@@ -1,6 +1,11 @@
 import { type Issue } from "@prisma/client";
 
 import { currentIssue, historicalIssues, type PublishedIssue } from "@/lib/content";
+import {
+  ISSUE_ARGUMENT_MIN_LENGTH,
+  ISSUE_BACKGROUND_MIN_LENGTH,
+  ISSUE_OVERVIEW_MIN_LENGTH,
+} from "@/lib/issue-text-guidelines";
 import { prisma } from "@/lib/prisma";
 
 type IssueSource = PublishedIssue["sources"][number];
@@ -39,6 +44,20 @@ export type CreateIssueInput = {
 };
 
 export type UpdateIssueInput = CreateIssueInput;
+
+function normalizeIssueText(value: string) {
+  return value
+    .trim()
+    .replace(/\r\n/g, "\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n");
+}
+
+function ensureMinimumTextLength(value: string, minLength: number, label: string) {
+  if (value.length < minLength) {
+    throw new Error(`${label} må være minst ${minLength} tegn.`);
+  }
+}
 
 function getMondayBase(now = new Date()) {
   const monday = new Date(now);
@@ -271,10 +290,10 @@ function buildIssueBaseData(input: CreateIssueInput, slug: string) {
     title: input.title.trim(),
     question: input.question.trim(),
     periodLabel: input.periodLabel?.trim() || formatIssuePeriodLabel(input.publishedAt, input.closesAt),
-    overview: input.overview.trim(),
-    background: input.background.trim(),
-    argumentFor: input.argumentFor.trim(),
-    argumentAgainst: input.argumentAgainst.trim(),
+    overview: normalizeIssueText(input.overview),
+    background: normalizeIssueText(input.background),
+    argumentFor: normalizeIssueText(input.argumentFor),
+    argumentAgainst: normalizeIssueText(input.argumentAgainst),
     supportLabel: input.supportLabel.trim(),
     opposeLabel: input.opposeLabel.trim(),
     publishedAt: input.publishedAt,
@@ -284,10 +303,19 @@ function buildIssueBaseData(input: CreateIssueInput, slug: string) {
 
 async function validateIssueMutation(input: CreateIssueInput, excludeIssueId?: number) {
   const slug = input.slug.trim();
+  const overview = normalizeIssueText(input.overview);
+  const background = normalizeIssueText(input.background);
+  const argumentFor = normalizeIssueText(input.argumentFor);
+  const argumentAgainst = normalizeIssueText(input.argumentAgainst);
 
   if (SYSTEM_ISSUE_SLUGS.includes(slug)) {
     throw new Error("Denne slugen er reservert internt.");
   }
+
+  ensureMinimumTextLength(overview, ISSUE_OVERVIEW_MIN_LENGTH, "Kort oversikt");
+  ensureMinimumTextLength(background, ISSUE_BACKGROUND_MIN_LENGTH, "Bakgrunn");
+  ensureMinimumTextLength(argumentFor, ISSUE_ARGUMENT_MIN_LENGTH, "Argument for");
+  ensureMinimumTextLength(argumentAgainst, ISSUE_ARGUMENT_MIN_LENGTH, "Argument mot");
 
   const existingIssue = await prisma.issue.findUnique({ where: { slug } });
 

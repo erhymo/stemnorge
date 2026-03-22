@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 
+import RichTextBlock from "@/components/RichTextBlock";
 import { getHistoricalIssueView } from "@/lib/issues";
 
 export const dynamic = "force-dynamic";
@@ -28,20 +29,20 @@ export default async function HistorieDetaljPage({ params }: HistorieDetaljPageP
 
       <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8">
         <p className="mb-4 text-sm uppercase tracking-[0.3em] text-slate-400">Bakgrunn</p>
-        <p className="text-base leading-8 text-slate-300">{issue.background}</p>
+        <RichTextBlock text={issue.background} className="space-y-4 text-base leading-8 text-slate-300" />
       </section>
 
       <section className="grid gap-6 md:grid-cols-2">
         <article className="rounded-[2rem] border border-emerald-300/15 bg-emerald-400/5 p-8">
           <p className="mb-3 text-sm uppercase tracking-[0.3em] text-emerald-200/80">{issue.supportLabel}</p>
           <h2 className="mb-4 text-3xl text-white">Argumenter som talte for</h2>
-          <p className="text-base leading-8 text-slate-200">{issue.argumentFor}</p>
+          <RichTextBlock text={issue.argumentFor} className="space-y-4 text-base leading-8 text-slate-200" />
         </article>
 
         <article className="rounded-[2rem] border border-rose-300/15 bg-rose-400/5 p-8">
           <p className="mb-3 text-sm uppercase tracking-[0.3em] text-rose-200/80">{issue.opposeLabel}</p>
           <h2 className="mb-4 text-3xl text-white">Argumenter som talte imot</h2>
-          <p className="text-base leading-8 text-slate-200">{issue.argumentAgainst}</p>
+          <RichTextBlock text={issue.argumentAgainst} className="space-y-4 text-base leading-8 text-slate-200" />
         </article>
       </section>
 

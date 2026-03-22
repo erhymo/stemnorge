@@ -3,8 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import type { AdminIssueDraft } from "@/lib/admin-issue-draft";
+import type { AdminIssueDraft, DraftGenerationSource } from "@/lib/admin-issue-draft";
 import { toAdminIssueSlug } from "@/lib/admin-issue-draft";
+import {
+  ISSUE_ARGUMENT_MIN_LENGTH,
+  ISSUE_BACKGROUND_MIN_LENGTH,
+  ISSUE_OVERVIEW_MIN_LENGTH,
+} from "@/lib/issue-text-guidelines";
 
 export type AdminIssueFormValues = {
   title: string;
@@ -83,6 +88,14 @@ function applyGeneratedDraft(current: AdminIssueFormValues, draft: AdminIssueDra
   };
 }
 
+function getTextLength(value: string) {
+  return value.trim().length;
+}
+
+function getLengthHintClassName(length: number, minLength: number) {
+  return length < minLength ? "text-amber-300" : "text-emerald-300";
+}
+
 export default function AdminIssueForm({ mode = "create", issueId, initialValues, onCancel, onSuccess }: AdminIssueFormProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && typeof issueId === "number";
@@ -116,7 +129,7 @@ export default function AdminIssueForm({ mode = "create", issueId, initialValues
         body: JSON.stringify({ topic: draftTopic, context: draftContext }),
       });
 
-      const data = (await res.json()) as { draft?: AdminIssueDraft; error?: string };
+      const data = (await res.json()) as { draft?: AdminIssueDraft; source?: DraftGenerationSource; error?: string };
 
       if (!res.ok || !data.draft) {
         setDraftMessage(data.error || "Kunne ikke generere utkast.");
@@ -124,7 +137,11 @@ export default function AdminIssueForm({ mode = "create", issueId, initialValues
       }
 
       setValues((current) => applyGeneratedDraft(current, data.draft as AdminIssueDraft, slugTouched));
-      setDraftMessage("Utkastet er lagt inn i skjemaet. Gå gjennom feltene og juster før du lagrer saken.");
+      setDraftMessage(
+        data.source === "openai"
+          ? "OpenAI-utkastet er lagt inn i skjemaet. Gå gjennom feltene og juster før du lagrer saken."
+          : "OpenAI var ikke tilgjengelig, så reserveutkastet ble lagt inn i skjemaet. Gå gjennom feltene ekstra nøye før du lagrer saken.",
+      );
     } catch {
       setDraftMessage("Noe gikk galt under generering av utkast.");
     } finally {
@@ -176,9 +193,13 @@ export default function AdminIssueForm({ mode = "create", issueId, initialValues
   const heading = isEditMode ? "Rediger planlagt sak" : "Planlegg en ny sak";
   const description = isEditMode
     ? "Bare planlagte saker kan endres. Oppdateringene må fortsatt holde seg innenfor et gyldig tidsvindu."
-    : "Start gjerne med et AI-utkast, men gå alltid gjennom feltene manuelt. Tidsvinduet må ikke overlappe med eksisterende saker.";
+    : "Start gjerne med et AI-utkast, men gå alltid gjennom feltene manuelt. Tidsvinduet må ikke overlappe med eksisterende saker, og tekstene bør være forklarende nok til at velgeren lærer noe av å lese dem.";
   const submitLabel = isEditMode ? "Lagre endringer" : "Opprett og planlegg sak";
   const submittingLabel = isEditMode ? "Lagrer endringer..." : "Oppretter sak...";
+  const overviewLength = getTextLength(values.overview);
+  const backgroundLength = getTextLength(values.background);
+  const argumentForLength = getTextLength(values.argumentFor);
+  const argumentAgainstLength = getTextLength(values.argumentAgainst);
 
   return (
     <section className="rounded-[2rem] border border-white/10 bg-slate-900/80 p-8 shadow-xl shadow-slate-950/40">
@@ -230,7 +251,7 @@ export default function AdminIssueForm({ mode = "create", issueId, initialValues
               >
                 {isGenerating ? "Genererer utkast..." : "Generer med AI"}
               </button>
-              <p className="text-xs leading-6 text-slate-400">Utkastet er kun et arbeidsgrunnlag og bør kvalitetssikres før publisering.</p>
+              <p className="text-xs leading-6 text-slate-400">Utkastet er kun et arbeidsgrunnlag og bør kvalitetssikres før publisering. Sikt på tydelige avsnitt og litt mer dybde enn før.</p>
             </div>
 
             {draftMessage ? <p className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">{draftMessage}</p> : null}
@@ -291,23 +312,35 @@ export default function AdminIssueForm({ mode = "create", issueId, initialValues
 
         <label className="space-y-2 text-sm text-slate-300">
           <span className="block">Kort oversikt</span>
-          <textarea value={values.overview} onChange={(event) => updateValue("overview", event.target.value)} rows={3} className="w-full rounded-[1.5rem] border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 outline-none transition focus:border-cyan-300/40 focus:bg-white/7" placeholder="Kort ingress som forklarer hva saken gjelder." />
+          <textarea value={values.overview} onChange={(event) => updateValue("overview", event.target.value)} rows={4} className="w-full rounded-[1.5rem] border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 outline-none transition focus:border-cyan-300/40 focus:bg-white/7" placeholder="Kort ingress som forklarer hva saken gjelder." />
+          <p className={`text-xs leading-6 ${getLengthHintClassName(overviewLength, ISSUE_OVERVIEW_MIN_LENGTH)}`}>
+            Nå: {overviewLength} tegn · minimum {ISSUE_OVERVIEW_MIN_LENGTH} tegn.
+          </p>
         </label>
 
         <label className="space-y-2 text-sm text-slate-300">
           <span className="block">Bakgrunn</span>
-          <textarea value={values.background} onChange={(event) => updateValue("background", event.target.value)} rows={4} className="w-full rounded-[1.5rem] border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 outline-none transition focus:border-cyan-300/40 focus:bg-white/7" placeholder="Gi nok kontekst til at velgeren forstår saken." />
+          <textarea value={values.background} onChange={(event) => updateValue("background", event.target.value)} rows={10} className="w-full rounded-[1.5rem] border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-slate-500 outline-none transition focus:border-cyan-300/40 focus:bg-white/7" placeholder="Gi nok kontekst til at velgeren forstår saken." />
+          <p className={`text-xs leading-6 ${getLengthHintClassName(backgroundLength, ISSUE_BACKGROUND_MIN_LENGTH)}`}>
+            Nå: {backgroundLength} tegn · minimum {ISSUE_BACKGROUND_MIN_LENGTH} tegn. Skriv gjerne 2–4 korte avsnitt.
+          </p>
         </label>
 
         <div className="grid gap-5 md:grid-cols-2">
           <label className="space-y-2 text-sm text-slate-300">
             <span className="block">Argument for</span>
-            <textarea value={values.argumentFor} onChange={(event) => updateValue("argumentFor", event.target.value)} rows={5} className="w-full rounded-[1.5rem] border border-emerald-300/15 bg-emerald-400/5 px-4 py-3 text-white placeholder-slate-500 outline-none transition focus:border-emerald-300/40 focus:bg-emerald-400/10" placeholder="Hva er hovedargumentet for forslaget?" />
+            <textarea value={values.argumentFor} onChange={(event) => updateValue("argumentFor", event.target.value)} rows={9} className="w-full rounded-[1.5rem] border border-emerald-300/15 bg-emerald-400/5 px-4 py-3 text-white placeholder-slate-500 outline-none transition focus:border-emerald-300/40 focus:bg-emerald-400/10" placeholder="Hva er hovedargumentet for forslaget?" />
+            <p className={`text-xs leading-6 ${getLengthHintClassName(argumentForLength, ISSUE_ARGUMENT_MIN_LENGTH)}`}>
+              Nå: {argumentForLength} tegn · minimum {ISSUE_ARGUMENT_MIN_LENGTH} tegn. Forklar gjerne i 2–3 korte avsnitt.
+            </p>
           </label>
 
           <label className="space-y-2 text-sm text-slate-300">
             <span className="block">Argument mot</span>
-            <textarea value={values.argumentAgainst} onChange={(event) => updateValue("argumentAgainst", event.target.value)} rows={5} className="w-full rounded-[1.5rem] border border-rose-300/15 bg-rose-400/5 px-4 py-3 text-white placeholder-slate-500 outline-none transition focus:border-rose-300/40 focus:bg-rose-400/10" placeholder="Hva er hovedargumentet mot forslaget?" />
+            <textarea value={values.argumentAgainst} onChange={(event) => updateValue("argumentAgainst", event.target.value)} rows={9} className="w-full rounded-[1.5rem] border border-rose-300/15 bg-rose-400/5 px-4 py-3 text-white placeholder-slate-500 outline-none transition focus:border-rose-300/40 focus:bg-rose-400/10" placeholder="Hva er hovedargumentet mot forslaget?" />
+            <p className={`text-xs leading-6 ${getLengthHintClassName(argumentAgainstLength, ISSUE_ARGUMENT_MIN_LENGTH)}`}>
+              Nå: {argumentAgainstLength} tegn · minimum {ISSUE_ARGUMENT_MIN_LENGTH} tegn. Forklar gjerne i 2–3 korte avsnitt.
+            </p>
           </label>
         </div>
 
