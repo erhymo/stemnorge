@@ -1,5 +1,5 @@
 const SENDGRID_API_URL = "https://api.sendgrid.com/v3/mail/send";
-const DEFAULT_FROM_EMAIL = "noreply@stemnorge.no";
+const DEFAULT_FROM_EMAIL = "myhre.oyvind@gmail.com";
 const DEFAULT_FROM_NAME = "StemNorge";
 
 function getSendGridApiKey() {
