@@ -1,73 +1,85 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { prismaMock, hashMock, signMock, verifyMock, randomUuidMock } = vi.hoisted(() => ({
+const { prismaMock, hashMock, compareMock, signMock, verifyMock } = vi.hoisted(() => ({
   prismaMock: {
     user: {
       create: vi.fn(),
-      findMany: vi.fn(),
       findUnique: vi.fn(),
-      update: vi.fn(),
     },
   },
   hashMock: vi.fn(),
+  compareMock: vi.fn(),
   signMock: vi.fn(),
   verifyMock: vi.fn(),
-  randomUuidMock: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
-vi.mock("bcryptjs", () => ({ default: { hash: hashMock } }));
+vi.mock("bcryptjs", () => ({ default: { hash: hashMock, compare: compareMock } }));
 vi.mock("jsonwebtoken", () => ({ default: { sign: signMock, verify: verifyMock } }));
-vi.mock("node:crypto", async () => {
-  const actual = await vi.importActual<typeof import("node:crypto")>("node:crypto");
-  return { ...actual, randomUUID: randomUuidMock };
-});
 
-import { doesUserExist, loginUser, registerUser, verifyToken } from "./auth";
+import { loginUser, registerUser, verifyToken } from "./auth";
 
 beforeEach(() => {
   vi.clearAllMocks();
   hashMock.mockResolvedValue("hashed-password");
+  compareMock.mockResolvedValue(true);
   signMock.mockReturnValue("signed-token");
-  randomUuidMock.mockReturnValue("generated-uuid");
 });
 
 describe("auth", () => {
-  it("finner eksisterende bruker via normalisert telefon", async () => {
+  it("registrerer bruker med e-post, passord og trimmet navn", async () => {
     prismaMock.user.findUnique.mockResolvedValue(null);
-    prismaMock.user.findMany.mockResolvedValue([{ id: 1, name: "Ada", phone: "90000001", password: "hash" }]);
+    prismaMock.user.create.mockResolvedValue({ id: 2, name: "Ada", email: "ada@test.no", password: "hashed-password" });
 
-    await expect(doesUserExist("+47 900 00 001")).resolves.toBe(true);
-  });
-
-  it("registrerer bruker med normalisert telefon og trimmet navn", async () => {
-    prismaMock.user.findUnique.mockResolvedValue(null);
-    prismaMock.user.findMany.mockResolvedValue([]);
-    prismaMock.user.create.mockResolvedValue({ id: 2, name: "Ada", phone: "+4790000001", password: "hashed-password" });
-
-    const result = await registerUser("900 00 001", "  Ada  ");
+    const result = await registerUser("Ada@Test.No", "hemmelighet1", "  Ada  ");
 
     expect(prismaMock.user.create).toHaveBeenCalledWith({
-      data: { name: "Ada", password: "hashed-password", phone: "+4790000001" },
+      data: { name: "Ada", password: "hashed-password", email: "ada@test.no" },
     });
     expect(result).toEqual({
       token: "signed-token",
-      user: { id: 2, name: "Ada", phone: "+4790000001" },
+      user: { id: 2, name: "Ada", email: "ada@test.no" },
     });
   });
 
-  it("oppdaterer lagret telefonformat ved innlogging", async () => {
+  it("avviser for kort passord", async () => {
+    await expect(registerUser("ada@test.no", "kort", "Ada")).rejects.toThrow("Passord må være minst 8 tegn.");
+  });
+
+  it("avviser ugyldig e-post", async () => {
+    await expect(registerUser("ugyldig", "hemmelighet1", "Ada")).rejects.toThrow("Ugyldig e-postadresse.");
+  });
+
+  it("avviser duplikat e-post", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ id: 1 });
+
+    await expect(registerUser("ada@test.no", "hemmelighet1", "Ada")).rejects.toThrow("allerede en konto");
+  });
+
+  it("logger inn med riktig passord", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ id: 3, name: "Ada", email: "ada@test.no", password: "hash" });
+    compareMock.mockResolvedValue(true);
+
+    const result = await loginUser("ada@test.no", "hemmelighet1");
+
+    expect(result?.user.email).toBe("ada@test.no");
+  });
+
+  it("avviser feil passord", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ id: 3, name: "Ada", email: "ada@test.no", password: "hash" });
+    compareMock.mockResolvedValue(false);
+
+    const result = await loginUser("ada@test.no", "feilpassord");
+
+    expect(result).toBeNull();
+  });
+
+  it("returnerer null for ukjent e-post", async () => {
     prismaMock.user.findUnique.mockResolvedValue(null);
-    prismaMock.user.findMany.mockResolvedValue([{ id: 3, name: "Ada", phone: "90000001", password: "hash" }]);
-    prismaMock.user.update.mockResolvedValue({ id: 3, name: "Ada", phone: "+4790000001", password: "hash" });
 
-    const result = await loginUser("90000001");
+    const result = await loginUser("ukjent@test.no", "hemmelighet1");
 
-    expect(prismaMock.user.update).toHaveBeenCalledWith({
-      where: { id: 3 },
-      data: { phone: "+4790000001" },
-    });
-    expect(result?.user.phone).toBe("+4790000001");
+    expect(result).toBeNull();
   });
 
   it("verifiserer gyldige JWT-payloads", () => {

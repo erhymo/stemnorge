@@ -6,13 +6,11 @@ import {
   getJwtSecret,
   getOpenAiApiKey,
   getOpenAiModel,
-  getSmsCodeSecret,
 } from "./env";
 
 const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
 const ORIGINAL_JWT_SECRET = process.env.JWT_SECRET;
 const ORIGINAL_ADMIN_SESSION_SECRET = process.env.ADMIN_SESSION_SECRET;
-const ORIGINAL_SMS_CODE_SECRET = process.env.SMS_CODE_SECRET;
 const ORIGINAL_OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const ORIGINAL_OPENAI_MODEL = process.env.OPENAI_MODEL;
 
@@ -24,7 +22,6 @@ afterEach(() => {
   setNodeEnv(ORIGINAL_NODE_ENV);
   process.env.JWT_SECRET = ORIGINAL_JWT_SECRET;
   process.env.ADMIN_SESSION_SECRET = ORIGINAL_ADMIN_SESSION_SECRET;
-  process.env.SMS_CODE_SECRET = ORIGINAL_SMS_CODE_SECRET;
   process.env.OPENAI_API_KEY = ORIGINAL_OPENAI_API_KEY;
   process.env.OPENAI_MODEL = ORIGINAL_OPENAI_MODEL;
 });
@@ -51,14 +48,12 @@ describe("env", () => {
     expect(() => getJwtSecret()).toThrow("JWT_SECRET kan ikke bruke standardverdien i production.");
   });
 
-  it("lar admin- og SMS-secret arve JWT_SECRET", () => {
+  it("lar admin-secret arve JWT_SECRET", () => {
     setNodeEnv("production");
     process.env.JWT_SECRET = "veldig-hemmelig";
     delete process.env.ADMIN_SESSION_SECRET;
-    delete process.env.SMS_CODE_SECRET;
 
     expect(getAdminSessionSecret()).toBe("veldig-hemmelig");
-    expect(getSmsCodeSecret()).toBe("veldig-hemmelig");
   });
 
   it("leser OpenAI-oppsett uten å kreve det i production", () => {

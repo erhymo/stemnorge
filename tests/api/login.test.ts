@@ -2,13 +2,11 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { loginUserMock, verifyCodeMock } = vi.hoisted(() => ({
+const { loginUserMock } = vi.hoisted(() => ({
   loginUserMock: vi.fn(),
-  verifyCodeMock: vi.fn(),
 }));
 
 vi.mock("../../lib/auth", () => ({ loginUser: loginUserMock }));
-vi.mock("../../lib/sms-auth", () => ({ verifySmsVerificationCode: verifyCodeMock }));
 
 import handler from "../../pages/api/login";
 
@@ -36,8 +34,7 @@ function createResponse() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  verifyCodeMock.mockResolvedValue({ ok: true, normalizedPhone: "+4790000001" });
-  loginUserMock.mockResolvedValue({ token: "jwt-token", user: { id: 1, name: "Ada", phone: "+4790000001" } });
+  loginUserMock.mockResolvedValue({ token: "jwt-token", user: { id: 1, name: "Ada", email: "ada@test.no" } });
 });
 
 describe("POST /api/login", () => {
@@ -51,47 +48,35 @@ describe("POST /api/login", () => {
     expect(res.ended).toBe(true);
   });
 
-  it("returnerer 400 når telefon eller kode mangler", async () => {
-    const req = { method: "POST", body: { phone: "", code: "" } } as NextApiRequest;
+  it("returnerer 400 når e-post eller passord mangler", async () => {
+    const req = { method: "POST", body: { email: "", password: "" } } as NextApiRequest;
     const res = createResponse() as NextApiResponse & { body: unknown; statusCode: number };
 
     await handler(req, res);
 
     expect(res.statusCode).toBe(400);
-    expect(res.body).toEqual({ error: "Telefonnummer og SMS-kode er påkrevd." });
+    expect(res.body).toEqual({ error: "E-post og passord er påkrevd." });
   });
 
-  it("returnerer 400 når SMS-koden ikke verifiseres", async () => {
-    verifyCodeMock.mockResolvedValue({ ok: false, error: "Feil kode." });
-    const req = { method: "POST", body: { phone: "90000001", code: "123456" } } as NextApiRequest;
-    const res = createResponse() as NextApiResponse & { body: unknown; statusCode: number };
-
-    await handler(req, res);
-
-    expect(res.statusCode).toBe(400);
-    expect(res.body).toEqual({ error: "Feil kode." });
-  });
-
-  it("returnerer 404 når bruker ikke finnes etter verifisert kode", async () => {
+  it("returnerer 401 ved feil e-post eller passord", async () => {
     loginUserMock.mockResolvedValue(null);
-    const req = { method: "POST", body: { phone: "90000001", code: "123456" } } as NextApiRequest;
+    const req = { method: "POST", body: { email: "ada@test.no", password: "feilpassord" } } as NextApiRequest;
     const res = createResponse() as NextApiResponse & { body: unknown; statusCode: number };
 
     await handler(req, res);
 
-    expect(res.statusCode).toBe(404);
-    expect(res.body).toEqual({ error: "Fant ingen konto for dette telefonnummeret." });
+    expect(res.statusCode).toBe(401);
+    expect(res.body).toEqual({ error: "Feil e-postadresse eller passord." });
   });
 
   it("returnerer token og bruker ved gyldig innlogging", async () => {
-    const req = { method: "POST", body: { phone: "90000001", code: "123456" } } as NextApiRequest;
+    const req = { method: "POST", body: { email: "ada@test.no", password: "hemmelighet1" } } as NextApiRequest;
     const res = createResponse() as NextApiResponse & { body: unknown; statusCode: number };
 
     await handler(req, res);
 
-    expect(verifyCodeMock).toHaveBeenCalledWith("90000001", "login", "123456");
-    expect(loginUserMock).toHaveBeenCalledWith("+4790000001");
+    expect(loginUserMock).toHaveBeenCalledWith("ada@test.no", "hemmelighet1");
     expect(res.statusCode).toBe(200);
-    expect(res.body).toEqual({ token: "jwt-token", user: { id: 1, name: "Ada", phone: "+4790000001" } });
+    expect(res.body).toEqual({ token: "jwt-token", user: { id: 1, name: "Ada", email: "ada@test.no" } });
   });
 });

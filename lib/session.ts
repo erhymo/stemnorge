@@ -1,7 +1,7 @@
 export type SessionUser = {
   id: number;
   name: string;
-  phone: string;
+  email: string;
 };
 
 export const SESSION_CHANGED_EVENT = "stemnorge-session-changed";
@@ -19,7 +19,7 @@ function isSessionUser(value: unknown): value is SessionUser {
     value !== null &&
     typeof (value as SessionUser).id === "number" &&
     typeof (value as SessionUser).name === "string" &&
-    typeof (value as SessionUser).phone === "string"
+    typeof (value as SessionUser).email === "string"
   );
 }
 

@@ -48,22 +48,6 @@ export function getAdminSessionSecret() {
   return readSecret("ADMIN_SESSION_SECRET", ["JWT_SECRET"]);
 }
 
-export function getSmsCodeSecret() {
-  return readSecret("SMS_CODE_SECRET", ["JWT_SECRET"]);
-}
-
-export function getTwilioAccountSid() {
-  return readEnv("TWILIO_ACCOUNT_SID");
-}
-
-export function getTwilioAuthToken() {
-  return readEnv("TWILIO_AUTH_TOKEN");
-}
-
-export function getTwilioFromNumber() {
-  return readEnv("TWILIO_FROM_NUMBER");
-}
-
 export function getOpenAiApiKey() {
   return readEnv("OPENAI_API_KEY");
 }

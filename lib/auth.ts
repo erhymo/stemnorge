@@ -1,10 +1,7 @@
-import { randomUUID } from "node:crypto";
-
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 import { getJwtSecret } from "@/lib/env";
-import { normalizePhoneNumber } from "@/lib/phone";
 import { prisma } from "@/lib/prisma";
 
 const JWT_SECRET = getJwtSecret();
@@ -14,11 +11,11 @@ export type AuthTokenPayload = {
   name: string;
 };
 
-function toPublicUser(user: { id: number; name: string; phone: string }) {
+function toPublicUser(user: { id: number; name: string; email: string }) {
   return {
     id: user.id,
     name: user.name,
-    phone: user.phone,
+    email: user.email,
   };
 }
 
@@ -28,92 +25,72 @@ function createUserToken(user: { id: number; name: string }) {
   });
 }
 
-async function updateUserPhoneIfNeeded(user: { id: number; name: string; phone: string; password: string }, normalizedPhone: string) {
-  if (user.phone === normalizedPhone) {
-    return user;
+function normalizeEmail(email: string): string | null {
+  const trimmed = email.trim().toLowerCase();
+
+  if (!trimmed || !trimmed.includes("@") || trimmed.length < 5) {
+    return null;
   }
 
-  try {
-    return await prisma.user.update({
-      where: { id: user.id },
-      data: { phone: normalizedPhone },
-    });
-  } catch {
-    return { ...user, phone: normalizedPhone };
-  }
+  return trimmed;
 }
 
-async function findUserByNormalizedPhone(normalizedPhone: string) {
-  const exactMatch = await prisma.user.findUnique({ where: { phone: normalizedPhone } });
-
-  if (exactMatch) {
-    return exactMatch;
-  }
-
-  const users = await prisma.user.findMany();
-  return users.find((user) => normalizePhoneNumber(user.phone) === normalizedPhone) ?? null;
-}
-
-async function createLoginResult(user: { id: number; name: string; phone: string; password: string }, normalizedPhone?: string) {
-  const resolvedUser = normalizedPhone ? await updateUserPhoneIfNeeded(user, normalizedPhone) : user;
-
-  return {
-    token: createUserToken(resolvedUser),
-    user: toPublicUser(resolvedUser),
-  };
-}
-
-export async function doesUserExist(phone: string) {
-  const normalizedPhone = normalizePhoneNumber(phone);
-
-  if (!normalizedPhone) {
-    return false;
-  }
-
-  const user = await findUserByNormalizedPhone(normalizedPhone);
-  return Boolean(user);
-}
-
-export async function registerUser(phone: string, name: string) {
-  const normalizedPhone = normalizePhoneNumber(phone);
+export async function registerUser(email: string, password: string, name: string) {
+  const normalizedEmail = normalizeEmail(email);
   const trimmedName = name.trim();
 
-  if (!normalizedPhone) {
-    throw new Error("Ugyldig telefonnummer.");
+  if (!normalizedEmail) {
+    throw new Error("Ugyldig e-postadresse.");
   }
 
   if (!trimmedName) {
     throw new Error("Navn er påkrevd.");
   }
 
-  const existingUser = await findUserByNormalizedPhone(normalizedPhone);
-
-  if (existingUser) {
-    throw new Error("Dette telefonnummeret har allerede en konto.");
+  if (!password || password.length < 8) {
+    throw new Error("Passord må være minst 8 tegn.");
   }
 
-  const passwordHash = await bcrypt.hash(randomUUID(), 10);
+  const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+
+  if (existingUser) {
+    throw new Error("Denne e-postadressen har allerede en konto.");
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
   const user = await prisma.user.create({
-    data: { phone: normalizedPhone, password: passwordHash, name: trimmedName },
+    data: { email: normalizedEmail, password: passwordHash, name: trimmedName },
   });
 
-  return createLoginResult(user);
+  return {
+    token: createUserToken(user),
+    user: toPublicUser(user),
+  };
 }
 
-export async function loginUser(phone: string) {
-  const normalizedPhone = normalizePhoneNumber(phone);
+export async function loginUser(email: string, password: string) {
+  const normalizedEmail = normalizeEmail(email);
 
-  if (!normalizedPhone) {
+  if (!normalizedEmail || !password) {
     return null;
   }
 
-  const user = await findUserByNormalizedPhone(normalizedPhone);
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
   if (!user) {
     return null;
   }
 
-  return createLoginResult(user, normalizedPhone);
+  const valid = await bcrypt.compare(password, user.password);
+
+  if (!valid) {
+    return null;
+  }
+
+  return {
+    token: createUserToken(user),
+    user: toPublicUser(user),
+  };
 }
 
 export function verifyToken(token: string): AuthTokenPayload | null {

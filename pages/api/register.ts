@@ -1,7 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { registerUser } from '../../lib/auth';
-import { verifySmsVerificationCode } from '../../lib/sms-auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -9,29 +8,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
-  const { phone, code, name } = req.body ?? {};
+  const { email, password, name } = req.body ?? {};
 
   if (
-    typeof phone !== 'string' ||
+    typeof email !== 'string' ||
     typeof name !== 'string' ||
-    typeof code !== 'string' ||
-    !phone.trim() ||
-    !code.trim() ||
+    typeof password !== 'string' ||
+    !email.trim() ||
+    !password.trim() ||
     !name.trim()
   ) {
-    res.status(400).json({ error: 'Navn, telefonnummer og SMS-kode er påkrevd.' });
-    return;
-  }
-
-  const verification = await verifySmsVerificationCode(phone, 'register', code);
-
-  if (!verification.ok) {
-    res.status(400).json({ error: verification.error });
+    res.status(400).json({ error: 'Navn, e-post og passord er påkrevd.' });
     return;
   }
 
   try {
-    const result = await registerUser(verification.normalizedPhone, name);
+    const result = await registerUser(email, password, name);
     res.status(201).json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Bruker finnes allerede eller ugyldig data.';

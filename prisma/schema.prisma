@@ -10,25 +10,11 @@ datasource db {
 
 model User {
   id        Int      @id @default(autoincrement())
-  phone     String   @unique
+  email     String   @unique
   password  String
   name      String
   createdAt DateTime @default(now())
   votes     Vote[]
-}
-
-model SmsVerificationChallenge {
-  id        Int      @id @default(autoincrement())
-  phone     String
-  purpose   String
-  codeHash  String
-  attempts  Int      @default(0)
-  expiresAt DateTime
-  consumedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([phone, purpose, createdAt])
 }
 
 model Issue {

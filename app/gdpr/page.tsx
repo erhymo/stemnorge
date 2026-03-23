@@ -14,8 +14,8 @@ export default function GDPRPage() {
         <h2 className="mb-4 text-2xl text-white">Det vi lagrer</h2>
         <ul className="space-y-3 text-base leading-8 text-slate-300">
           <li>• fullt navn ved registrering</li>
-          <li>• norsk mobilnummer for verifisering og innlogging</li>
-          <li>• innloggingsdata som trengs for å beskytte kontoen din</li>
+          <li>• e-postadresse for innlogging</li>
+          <li>• kryptert passord for å beskytte kontoen din</li>
         </ul>
       </section>
 
