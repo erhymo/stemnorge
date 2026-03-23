@@ -394,6 +394,32 @@ export async function deletePlannedIssue(issueId: number, now = new Date()) {
   return prisma.issue.delete({ where: { id: issueId } });
 }
 
+export async function swapIssueSchedules(issueIdA: number, issueIdB: number, now = new Date()) {
+  const issueA = await getEditablePlannedIssue(issueIdA, now);
+  const issueB = await getEditablePlannedIssue(issueIdB, now);
+
+  await prisma.$transaction([
+    prisma.issue.update({
+      where: { id: issueA.id },
+      data: {
+        publishedAt: issueB.publishedAt,
+        closesAt: issueB.closesAt,
+        periodLabel: formatIssuePeriodLabel(issueB.publishedAt, issueB.closesAt),
+      },
+    }),
+    prisma.issue.update({
+      where: { id: issueB.id },
+      data: {
+        publishedAt: issueA.publishedAt,
+        closesAt: issueA.closesAt,
+        periodLabel: formatIssuePeriodLabel(issueA.publishedAt, issueA.closesAt),
+      },
+    }),
+  ]);
+
+  return { swapped: [issueA.id, issueB.id] };
+}
+
 export async function publishIssueNow(issueId: number, now = new Date()) {
   const issue = await getEditablePlannedIssue(issueId, now);
 
