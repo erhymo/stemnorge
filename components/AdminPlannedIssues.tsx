@@ -40,6 +40,35 @@ export default function AdminPlannedIssues({ issues }: AdminPlannedIssuesProps) 
   const [editingIssueId, setEditingIssueId] = useState<number | null>(null);
   const [feedback, setFeedback] = useState("");
   const [deletingIssueId, setDeletingIssueId] = useState<number | null>(null);
+  const [publishingIssueId, setPublishingIssueId] = useState<number | null>(null);
+
+  async function handlePublishNow(issue: PlannedIssueItem) {
+    const confirmed = window.confirm(`Publiser "${issue.question}" nå? Saken blir umiddelbart tilgjengelig for stemming.`);
+
+    if (!confirmed) {
+      return;
+    }
+
+    setFeedback("");
+    setPublishingIssueId(issue.id);
+
+    try {
+      const res = await fetch(`/api/admin/issues/${issue.id}/publish`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setFeedback(typeof data.error === "string" ? data.error : "Kunne ikke publisere saken.");
+        return;
+      }
+
+      setFeedback(`Saken "${issue.slug}" ble publisert!`);
+      router.refresh();
+    } catch {
+      setFeedback("Noe gikk galt under publisering av saken.");
+    } finally {
+      setPublishingIssueId(null);
+    }
+  }
 
   async function handleDelete(issue: PlannedIssueItem) {
     const confirmed = window.confirm(`Slett den planlagte saken "${issue.question}"? Dette kan ikke angres.`);
@@ -98,6 +127,9 @@ export default function AdminPlannedIssues({ issues }: AdminPlannedIssuesProps) 
                   </div>
 
                   <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={() => handlePublishNow(issue)} disabled={publishingIssueId === issue.id} className="rounded-full border border-emerald-300/25 bg-emerald-400/10 px-4 py-2 text-sm font-medium text-emerald-200 transition hover:border-emerald-200/50 hover:bg-emerald-400/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-70">
+                      {publishingIssueId === issue.id ? "Publiserer..." : "Publiser nå"}
+                    </button>
                     <button type="button" onClick={() => {
                       setFeedback("");
                       setEditingIssueId((current) => (current === issue.id ? null : issue.id));

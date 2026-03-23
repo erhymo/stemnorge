@@ -394,6 +394,35 @@ export async function deletePlannedIssue(issueId: number, now = new Date()) {
   return prisma.issue.delete({ where: { id: issueId } });
 }
 
+export async function publishIssueNow(issueId: number, now = new Date()) {
+  const issue = await getEditablePlannedIssue(issueId, now);
+
+  const activeIssue = await prisma.issue.findFirst({
+    where: {
+      slug: { notIn: SYSTEM_ISSUE_SLUGS },
+      id: { not: issueId },
+      publishedAt: { lte: now },
+      closesAt: { gt: now },
+    },
+  });
+
+  if (activeIssue) {
+    throw new Error(`Kan ikke publisere nå — saken "${activeIssue.question}" er allerede aktiv.`);
+  }
+
+  const duration = issue.closesAt.getTime() - issue.publishedAt.getTime();
+  const newClosesAt = new Date(now.getTime() + duration);
+
+  return prisma.issue.update({
+    where: { id: issueId },
+    data: {
+      publishedAt: now,
+      closesAt: newClosesAt,
+      periodLabel: formatIssuePeriodLabel(now, newClosesAt),
+    },
+  });
+}
+
 export async function getIssueVoteSummary(slug?: string, now = new Date()) {
   await ensureSeedIssues();
 
