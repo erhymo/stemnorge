@@ -34,7 +34,7 @@ function createResponse() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  loginUserMock.mockResolvedValue({ token: "jwt-token", user: { id: 1, name: "Ada", email: "ada@test.no" } });
+  loginUserMock.mockResolvedValue({ verified: true, token: "jwt-token", user: { id: 1, name: "Ada", email: "ada@test.no" } });
 });
 
 describe("POST /api/login", () => {
@@ -78,5 +78,16 @@ describe("POST /api/login", () => {
     expect(loginUserMock).toHaveBeenCalledWith("ada@test.no", "hemmelighet1");
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ token: "jwt-token", user: { id: 1, name: "Ada", email: "ada@test.no" } });
+  });
+
+  it("returnerer 403 for uverifisert e-post", async () => {
+    loginUserMock.mockResolvedValue({ verified: false });
+    const req = { method: "POST", body: { email: "ada@test.no", password: "hemmelighet1" } } as NextApiRequest;
+    const res = createResponse() as NextApiResponse & { body: unknown; statusCode: number };
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(403);
+    expect(res.body).toEqual(expect.objectContaining({ code: "EMAIL_NOT_VERIFIED" }));
   });
 });

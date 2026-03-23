@@ -1,19 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { notifySessionChanged, saveSession } from "@/lib/session";
-
 export default function RegisterPage() {
-  const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registered, setRegistered] = useState(false);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -45,12 +42,8 @@ export default function RegisterPage() {
 
       const data = await res.json();
 
-      if (res.ok && data.token) {
-        saveSession(data.token, data.user);
-        notifySessionChanged();
-        setMessage("Registrering vellykket! Du logges inn nå...");
-        router.push("/vote");
-        router.refresh();
+      if (res.ok) {
+        setRegistered(true);
         return;
       }
 
@@ -60,6 +53,30 @@ export default function RegisterPage() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (registered) {
+    return (
+      <div className="mx-auto flex min-h-[calc(100vh-81px)] w-full max-w-xl items-center justify-center px-6 py-12">
+        <div className="space-y-6 rounded-[2rem] border border-white/10 bg-slate-900/80 p-8 text-center shadow-xl">
+          <div className="text-5xl">📧</div>
+          <h1 className="text-2xl text-white">Sjekk e-posten din</h1>
+          <p className="text-slate-300">
+            Vi har sendt en verifiseringslenke til <span className="font-semibold text-cyan-200">{email}</span>.
+            Klikk på lenken i e-posten for å aktivere kontoen din.
+          </p>
+          <p className="text-sm text-slate-400">
+            Sjekk søppelpost-mappen hvis du ikke finner e-posten.
+          </p>
+          <Link
+            href="/login"
+            className="inline-block rounded-full bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
+          >
+            Gå til innlogging
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

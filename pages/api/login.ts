@@ -22,5 +22,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
-  res.status(200).json(result);
+  if (!result.verified) {
+    res.status(403).json({ error: 'E-postadressen din er ikke verifisert. Sjekk innboksen din.', code: 'EMAIL_NOT_VERIFIED' });
+    return;
+  }
+
+  res.status(200).json({ token: result.token, user: result.user });
 }

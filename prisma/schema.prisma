@@ -9,12 +9,27 @@ datasource db {
 }
 
 model User {
+  id                 Int                  @id @default(autoincrement())
+  email              String               @unique
+  password           String
+  name               String
+  emailVerified      Boolean              @default(false)
+  emailVerifyToken   String?              @unique
+  createdAt          DateTime             @default(now())
+  votes              Vote[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
   id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  name      String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  tokenHash String
+  expiresAt DateTime
+  usedAt    DateTime?
   createdAt DateTime @default(now())
-  votes     Vote[]
+
+  @@index([userId])
 }
 
 model Issue {

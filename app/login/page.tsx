@@ -11,6 +11,7 @@ function LoginPageContent() {
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showResend, setShowResend] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextHref = useMemo(() => {
@@ -18,9 +19,17 @@ function LoginPageContent() {
     return requestedNext && requestedNext.startsWith("/") ? requestedNext : "/vote";
   }, [searchParams]);
 
+  const verifiedParam = searchParams?.get("verified") ?? null;
+  const verifiedMessage = verifiedParam === "ok"
+    ? "✅ E-postadressen din er bekreftet! Du kan nå logge inn."
+    : verifiedParam === "invalid"
+    ? "❌ Ugyldig eller utløpt verifiseringslenke."
+    : null;
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setMessage("");
+    setShowResend(false);
 
     if (!email || !password) {
       setMessage("Vennligst fyll inn både e-post og passord.");
@@ -45,6 +54,9 @@ function LoginPageContent() {
         setMessage("Innlogging vellykket!");
         router.push(nextHref);
         router.refresh();
+      } else if (data.code === "EMAIL_NOT_VERIFIED") {
+        setMessage(data.error);
+        setShowResend(true);
       } else {
         setMessage(data.error || "Feil e-post eller passord.");
       }
@@ -52,6 +64,22 @@ function LoginPageContent() {
       setMessage("Noe gikk galt");
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleResendVerification() {
+    setMessage("Sender ny verifiseringsmail...");
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      setMessage(data.message || "E-post sendt, sjekk innboksen din.");
+      setShowResend(false);
+    } catch {
+      setMessage("Kunne ikke sende e-post. Prøv igjen.");
     }
   }
 
@@ -77,6 +105,10 @@ function LoginPageContent() {
           <h2 className="text-2xl text-white">Velkommen tilbake</h2>
           <p className="text-sm leading-7 text-slate-400">Bruk samme e-post og passord som da du opprettet konto.</p>
         </div>
+
+        {verifiedMessage && (
+          <p className="mb-6 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">{verifiedMessage}</p>
+        )}
 
         <form className="flex flex-col gap-5" onSubmit={handleLogin}>
           <label className="space-y-2 text-sm text-slate-300">
@@ -111,15 +143,33 @@ function LoginPageContent() {
         </form>
 
         {message && (
-          <p className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">{message}</p>
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-200">
+            <p>{message}</p>
+            {showResend && (
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                className="mt-2 text-cyan-200 underline transition hover:text-white"
+              >
+                Send verifiseringsmail på nytt
+              </button>
+            )}
+          </div>
         )}
 
-        <p className="mt-6 text-sm text-slate-400">
-          Har du ikke konto ennå?{" "}
-          <Link href="/register" className="font-medium text-cyan-200 transition hover:text-white">
-            Registrer deg her
-          </Link>
-        </p>
+        <div className="mt-6 flex flex-col gap-2 text-sm text-slate-400">
+          <p>
+            Har du ikke konto ennå?{" "}
+            <Link href="/register" className="font-medium text-cyan-200 transition hover:text-white">
+              Registrer deg her
+            </Link>
+          </p>
+          <p>
+            <Link href="/forgot-password" className="font-medium text-cyan-200 transition hover:text-white">
+              Glemt passord?
+            </Link>
+          </p>
+        </div>
       </section>
     </div>
   );

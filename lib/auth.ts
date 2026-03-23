@@ -1,6 +1,9 @@
+import { randomUUID } from "node:crypto";
+
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+import { buildVerificationEmail, sendEmail } from "@/lib/email";
 import { getJwtSecret } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 
@@ -58,8 +61,14 @@ export async function registerUser(email: string, password: string, name: string
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
+  const emailVerifyToken = randomUUID();
   const user = await prisma.user.create({
-    data: { email: normalizedEmail, password: passwordHash, name: trimmedName },
+    data: { email: normalizedEmail, password: passwordHash, name: trimmedName, emailVerifyToken },
+  });
+
+  const emailContent = buildVerificationEmail(trimmedName, emailVerifyToken);
+  await sendEmail({ to: normalizedEmail, ...emailContent }).catch((err) => {
+    console.error("Kunne ikke sende verifiseringsmail:", err);
   });
 
   return {
@@ -87,10 +96,129 @@ export async function loginUser(email: string, password: string) {
     return null;
   }
 
+  if (!user.emailVerified) {
+    return { verified: false as const };
+  }
+
   return {
+    verified: true as const,
     token: createUserToken(user),
     user: toPublicUser(user),
   };
+}
+
+export async function verifyEmailToken(token: string) {
+  if (!token) {
+    return false;
+  }
+
+  const user = await prisma.user.findUnique({ where: { emailVerifyToken: token } });
+
+  if (!user) {
+    return false;
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { emailVerified: true, emailVerifyToken: null },
+  });
+
+  return true;
+}
+
+export async function resendVerificationEmail(email: string) {
+  const normalizedEmail = normalizeEmail(email);
+
+  if (!normalizedEmail) {
+    return false;
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+
+  if (!user || user.emailVerified) {
+    return false;
+  }
+
+  const newToken = randomUUID();
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { emailVerifyToken: newToken },
+  });
+
+  const emailContent = buildVerificationEmail(user.name, newToken);
+  await sendEmail({ to: normalizedEmail, ...emailContent });
+
+  return true;
+}
+
+export async function requestPasswordReset(email: string) {
+  const normalizedEmail = normalizeEmail(email);
+
+  if (!normalizedEmail) {
+    return;
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+
+  if (!user) {
+    return;
+  }
+
+  const { buildPasswordResetEmail } = await import("@/lib/email");
+
+  const token = randomUUID();
+  const tokenHash = await bcrypt.hash(token, 10);
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+  await prisma.passwordResetToken.create({
+    data: { userId: user.id, tokenHash, expiresAt },
+  });
+
+  const emailContent = buildPasswordResetEmail(user.name, token);
+  await sendEmail({ to: normalizedEmail, ...emailContent });
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+  if (!token || !newPassword || newPassword.length < 8) {
+    throw new Error("Ugyldig token eller passord (minst 8 tegn).");
+  }
+
+  const recentTokens = await prisma.passwordResetToken.findMany({
+    where: { usedAt: null, expiresAt: { gt: new Date() } },
+    include: { user: true },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+
+  let matchedRecord = null;
+
+  for (const record of recentTokens) {
+    const isMatch = await bcrypt.compare(token, record.tokenHash);
+
+    if (isMatch) {
+      matchedRecord = record;
+      break;
+    }
+  }
+
+  if (!matchedRecord) {
+    throw new Error("Ugyldig eller utløpt tilbakestillingslenke.");
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: matchedRecord.userId },
+      data: { password: passwordHash, emailVerified: true },
+    }),
+    prisma.passwordResetToken.update({
+      where: { id: matchedRecord.id },
+      data: { usedAt: new Date() },
+    }),
+  ]);
+
+  return true;
 }
 
 export function verifyToken(token: string): AuthTokenPayload | null {
