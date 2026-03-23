@@ -45,16 +45,19 @@ const LONG_OVERVIEW =
 const LONG_BACKGROUND = [
   "Dette er en bakgrunnstekst som beskriver dagens situasjon, hvorfor saken er aktuell og hvilke grupper som blir berørt når politikken endres. Den gir nok sammenheng til at leseren ser hvordan spørsmålet henger sammen med større prioriteringer i samfunnet.",
   "Bakgrunnen bør også forklare hvilke hensyn som trekker i ulike retninger, og hvorfor det ikke alltid finnes en enkel løsning. På den måten får velgeren et bedre grunnlag for å vurdere både mål, risiko og mulige konsekvenser.",
+  "Det er også viktig å se saken i en bredere kontekst, der både historiske erfaringer og fremtidige utviklingstrekk spiller inn. Når flere faktorer virker sammen, blir det lettere å forstå hvorfor meningene spriker og hvorfor kompromisser ofte er nødvendig for å komme videre.",
 ].join("\n\n");
 
 const LONG_ARGUMENT_FOR = [
   "Dette er et lengre argument for saken som forklarer hvilke gevinster tilhengere ser for seg, og hvorfor de mener tiltaket kan løse reelle utfordringer bedre enn dagens ordning.",
   "Det utdyper også hvorfor tilhengerne kan mene at en tydelig prioritering vil gi mer forutsigbarhet, sterkere ansvar og bedre fremdrift over tid.",
+  "I tillegg vil noen peke på at det å handle nå gir bedre muligheter til å forme utviklingen mens handlingsrommet fortsatt er stort nok til å gjøre en reell forskjell.",
 ].join("\n\n");
 
 const LONG_ARGUMENT_AGAINST = [
   "Dette er et lengre argument mot saken som beskriver hvilke kostnader, risikoer og uønskede effekter motstanderne frykter dersom tiltaket blir vedtatt.",
   "Det forklarer også hvorfor skeptikere kan mene at andre løsninger bør prøves først, eller at eksisterende ordninger bør forbedres før man går videre med et større grep.",
+  "Noen vil dessuten hevde at usikkerheten rundt langtidseffektene gjør det klokere å avvente mer kunnskap, i stedet for å binde store ressurser til et tiltak som kanskje ikke treffer godt nok.",
 ].join("\n\n");
 
 function createIssueRecord(overrides: Partial<Record<string, unknown>> = {}) {
@@ -189,7 +192,7 @@ describe("issue mutations", () => {
         },
         new Date("2030-01-01T00:00:00.000Z"),
       ),
-    ).rejects.toThrow("Bakgrunn må være minst 280 tegn.");
+    ).rejects.toThrow("Bakgrunn må være minst 600 tegn.");
   });
 
   it("sletter en planlagt sak", async () => {

@@ -32,9 +32,10 @@ describe("admin issue draft", () => {
     expect(draft.overview).toContain("Denne saken handler om atomkraft i Norge.");
     expect(draft.background).toContain("\n\n");
     expect(draft.argumentFor).toContain("Vurder forsyningssikkerhet og kostnader.");
-    expect(draft.background.length).toBeGreaterThanOrEqual(280);
-    expect(draft.argumentFor.length).toBeGreaterThanOrEqual(220);
-    expect(draft.argumentAgainst.length).toBeGreaterThanOrEqual(220);
+    expect(draft.overview.length).toBeGreaterThanOrEqual(150);
+    expect(draft.background.length).toBeGreaterThanOrEqual(600);
+    expect(draft.argumentFor.length).toBeGreaterThanOrEqual(400);
+    expect(draft.argumentAgainst.length).toBeGreaterThanOrEqual(400);
   });
 
   it("beholder ferdig formulert spørsmål", () => {
@@ -121,9 +122,9 @@ describe("admin issue draft", () => {
     const result = await generateAdminIssueDraft({ topic: "Atomkraft i Norge" });
 
     expect(result.source).toBe("openai");
-    expect(result.draft.overview.length).toBeGreaterThanOrEqual(80);
-    expect(result.draft.background.length).toBeGreaterThanOrEqual(280);
-    expect(result.draft.argumentFor.length).toBeGreaterThanOrEqual(220);
-    expect(result.draft.argumentAgainst.length).toBeGreaterThanOrEqual(220);
+    expect(result.draft.overview.length).toBeGreaterThanOrEqual(150);
+    expect(result.draft.background.length).toBeGreaterThanOrEqual(600);
+    expect(result.draft.argumentFor.length).toBeGreaterThanOrEqual(400);
+    expect(result.draft.argumentAgainst.length).toBeGreaterThanOrEqual(400);
   });
 });

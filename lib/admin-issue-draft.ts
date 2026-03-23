@@ -146,8 +146,15 @@ async function requestOpenAiDraft(input: GenerateAdminIssueDraftInput, apiKey: s
       messages: [
         {
           role: "system",
-          content:
-            "Du lager førsteutkast til politiske saker for en norsk stemmeapp. Skriv på norsk bokmål. Vær nøktern, balansert, konkret og pedagogisk. Målet er at leseren skal forstå hva saken handler om og hvilke hensyn som står mot hverandre. Ikke finn på konkrete fakta, tall, vedtak eller kilder. Hvis du er usikker, skriv generelt og forklar typiske avveininger. Skriv overview som en informativ ingress på 2-4 setninger. Skriv background i 2-4 korte avsnitt. Skriv argumentFor og argumentAgainst i 2-3 korte avsnitt hver. Returner kun gyldig JSON med feltene title, question, overview, background, argumentFor og argumentAgainst.",
+          content: [
+            "Du lager førsteutkast til politiske saker for en norsk stemmeapp. Skriv på norsk bokmål.",
+            "OBJEKTIVITET: Feltene overview og background skal være strengt objektive og nøytrale. Ikke ta stilling, ikke bruk ladede ord, og presenter alle sider likeverdig. Kun argumentFor og argumentAgainst skal være partiske.",
+            "TALL OG STATISTIKK: Bruk konkrete, verifiserbare tall, prosenter og statistikk der det er relevant (f.eks. kostnader, antall berørte, tidsrammer, internasjonale sammenligninger). Referer til kjente offentlige kilder som SSB, Regjeringen, NOU-er eller internasjonale organisasjoner. Ikke finn på tall — bruk kun fakta du er sikker på.",
+            "LENGDEKRAV: overview må være minst 150 tegn. background må være minst 600 tegn. argumentFor og argumentAgainst må hver være minst 400 tegn.",
+            "Vær nøktern, balansert, konkret og pedagogisk. Målet er at leseren skal forstå hva saken handler om og kunne ta en informert stilling.",
+            "Skriv overview som en informativ, objektiv ingress på 3-5 setninger. Skriv background i 3-5 avsnitt med faktisk kontekst, tall og nåværende situasjon. Skriv argumentFor og argumentAgainst i 3-4 avsnitt hver med konkrete gevinster/risikoer.",
+            "Returner kun gyldig JSON med feltene title, question, overview, background, argumentFor og argumentAgainst.",
+          ].join(" "),
         },
         {
           role: "user",
@@ -157,13 +164,14 @@ async function requestOpenAiDraft(input: GenerateAdminIssueDraftInput, apiKey: s
             requirements: {
               title: "Kort og tydelig tittel på norsk.",
               question: "Én nøytral spørsmålstekst som velgeren skal ta stilling til.",
-              overview: "2-4 setninger som forklarer hva saken gjelder og hvorfor temaet er relevant for velgeren.",
+              overview:
+                "3-5 objektive setninger (minst 150 tegn) som forklarer hva saken gjelder, hvorfor temaet er relevant, og hvilke dimensjoner som gjør spørsmålet viktig. Bruk gjerne et konkret tall eller faktum som viser omfanget.",
               background:
-                "2-4 korte avsnitt som forklarer bakgrunn, dagens situasjon, hvorfor saken diskuteres, og hvilke hensyn som står mot hverandre. Ikke bruk udokumenterte fakta.",
+                "3-5 avsnitt (minst 600 tegn) som objektivt forklarer bakgrunn, dagens situasjon og hvorfor saken diskuteres. Inkluder verifiserbare tall og statistikk der det er mulig (kostnader, antall berørte, tidslinjer). Referer til kjente kilder. Ikke ta stilling — forklar begge sider likeverdig.",
               argumentFor:
-                "2-3 korte avsnitt som beskriver hvorfor noen kan støtte saken, hvilke gevinster de ser for seg, og hvilke problemer de mener tiltaket kan løse.",
+                "3-4 avsnitt (minst 400 tegn) som beskriver hvorfor noen støtter saken, med konkrete gevinster, tall og eksempler. Forklar hvilke problemer tilhengerne mener tiltaket løser.",
               argumentAgainst:
-                "2-3 korte avsnitt som beskriver hvorfor noen kan være skeptiske, hvilke risikoer eller kostnader de ser, og hvilke alternative prioriteringer de kan mene er bedre.",
+                "3-4 avsnitt (minst 400 tegn) som beskriver hvorfor noen er skeptiske, med konkrete risikoer, kostnader og eksempler. Forklar hvilke alternative løsninger motstanderne foretrekker.",
             },
           }),
         },
