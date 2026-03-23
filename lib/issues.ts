@@ -436,8 +436,9 @@ export async function publishIssueNow(issueId: number, now = new Date()) {
     throw new Error(`Kan ikke publisere nå — saken "${activeIssue.question}" er allerede aktiv.`);
   }
 
-  const duration = issue.closesAt.getTime() - issue.publishedAt.getTime();
-  const newClosesAt = new Date(now.getTime() + duration);
+  const monday = getMondayBase(now);
+  const sundayEvening = withTime(shiftDays(monday, 6), 18);
+  const newClosesAt = sundayEvening > now ? sundayEvening : withTime(shiftDays(monday, 13), 18);
 
   return prisma.issue.update({
     where: { id: issueId },
