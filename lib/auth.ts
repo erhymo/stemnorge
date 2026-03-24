@@ -67,8 +67,9 @@ export async function registerUser(email: string, password: string, name: string
 
   const passwordHash = await bcrypt.hash(password, 10);
   const emailVerifyToken = randomUUID();
+  const emailVerifyTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
   const user = await prisma.user.create({
-    data: { email: normalizedEmail, password: passwordHash, name: trimmedName, emailVerifyToken },
+    data: { email: normalizedEmail, password: passwordHash, name: trimmedName, emailVerifyToken, emailVerifyTokenExpiresAt },
   });
 
   const emailContent = buildVerificationEmail(trimmedName, emailVerifyToken);
@@ -123,9 +124,14 @@ export async function verifyEmailToken(token: string) {
     return false;
   }
 
+  // Check expiration if set (tokens created before the migration have no expiry)
+  if (user.emailVerifyTokenExpiresAt && user.emailVerifyTokenExpiresAt <= new Date()) {
+    return false;
+  }
+
   await prisma.user.update({
     where: { id: user.id },
-    data: { emailVerified: true, emailVerifyToken: null },
+    data: { emailVerified: true, emailVerifyToken: null, emailVerifyTokenExpiresAt: null },
   });
 
   return true;
@@ -145,9 +151,10 @@ export async function resendVerificationEmail(email: string) {
   }
 
   const newToken = randomUUID();
+  const emailVerifyTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
   await prisma.user.update({
     where: { id: user.id },
-    data: { emailVerifyToken: newToken },
+    data: { emailVerifyToken: newToken, emailVerifyTokenExpiresAt },
   });
 
   const emailContent = buildVerificationEmail(user.name, newToken);

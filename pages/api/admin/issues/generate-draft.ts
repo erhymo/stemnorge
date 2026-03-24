@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { getAdminSessionFromCookieHeader } from "../../../../lib/admin-auth";
+import { getAdminSessionFromCookieHeader, verifyCsrfOrigin } from "../../../../lib/admin-auth";
 import { generateAdminIssueDraft } from "../../../../lib/admin-issue-draft";
 
 function readString(value: unknown) {
@@ -10,6 +10,11 @@ function readString(value: unknown) {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.status(405).end();
+    return;
+  }
+
+  if (!verifyCsrfOrigin(req.headers)) {
+    res.status(403).json({ error: "Ugyldig opprinnelse for forespørselen." });
     return;
   }
 

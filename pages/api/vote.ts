@@ -13,9 +13,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
-  const { token, value } = req.body;
+  const authHeader = req.headers.authorization;
+  const token = typeof authHeader === 'string' ? authHeader.replace('Bearer ', '') : null;
+  const { value } = req.body ?? {};
 
-  if (typeof token !== 'string' || !token || !isVoteValue(value)) {
+  if (!token || !isVoteValue(value)) {
     res.status(400).json({ error: 'Ugyldig stemmedata.' });
     return;
   }

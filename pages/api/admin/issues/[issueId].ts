@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { getAdminIssueMutationErrorStatus, parseAdminIssueInput } from "../../../../lib/admin-issue-payload";
-import { getAdminSessionFromCookieHeader } from "../../../../lib/admin-auth";
+import { getAdminSessionFromCookieHeader, verifyCsrfOrigin } from "../../../../lib/admin-auth";
 import { deletePlannedIssue, updatePlannedIssue } from "../../../../lib/issues";
 
 function readIssueId(value: string | string[] | undefined) {
@@ -13,6 +13,11 @@ function readIssueId(value: string | string[] | undefined) {
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "PATCH" && req.method !== "DELETE") {
     res.status(405).end();
+    return;
+  }
+
+  if (!verifyCsrfOrigin(req.headers)) {
+    res.status(403).json({ error: "Ugyldig opprinnelse for forespørselen." });
     return;
   }
 

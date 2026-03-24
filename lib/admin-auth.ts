@@ -124,3 +124,32 @@ export function clearAdminSessionCookie() {
 
   return parts.join("; ");
 }
+
+/**
+ * Verify that the request Origin matches the app's own origin.
+ * Blocks cross-site POST/PATCH/DELETE requests that rely on cookie auth.
+ * Returns true if the origin is valid or missing (non-browser clients).
+ */
+export function verifyCsrfOrigin(headers: Record<string, string | string[] | undefined>) {
+  const origin = typeof headers.origin === "string" ? headers.origin : undefined;
+
+  // Non-browser clients (curl, Postman) may not send Origin – allow them
+  // since they cannot attach cookies cross-site.
+  if (!origin) {
+    return true;
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+
+  // In development without a configured app URL, allow all origins
+  if (!appUrl) {
+    return process.env.NODE_ENV !== "production";
+  }
+
+  try {
+    const allowedOrigin = new URL(appUrl).origin;
+    return origin === allowedOrigin;
+  } catch {
+    return false;
+  }
+}

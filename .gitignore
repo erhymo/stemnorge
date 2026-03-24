@@ -39,6 +39,7 @@ yarn-error.log*
 /dev.db
 /prisma/*.db
 /prisma/*.db-journal
+*.patch
 
 # vercel
 .vercel

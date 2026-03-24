@@ -63,8 +63,11 @@ export default function VoteClient({ issue }: VoteClientProps) {
     try {
       const res = await fetch("/api/vote", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, value: choice }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ value: choice }),
       });
       const data = await res.json();
 

@@ -7,7 +7,7 @@ const { getAdminSessionMock, generateAdminIssueDraftMock } = vi.hoisted(() => ({
   generateAdminIssueDraftMock: vi.fn(),
 }));
 
-vi.mock("../../../../lib/admin-auth", () => ({ getAdminSessionFromCookieHeader: getAdminSessionMock }));
+vi.mock("../../../../lib/admin-auth", () => ({ getAdminSessionFromCookieHeader: getAdminSessionMock, verifyCsrfOrigin: () => true }));
 vi.mock("../../../../lib/admin-issue-draft", () => ({ generateAdminIssueDraft: generateAdminIssueDraftMock }));
 
 import handler from "../../../../pages/api/admin/issues/generate-draft";

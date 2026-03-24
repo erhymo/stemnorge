@@ -111,7 +111,7 @@ describe("auth", () => {
   });
 
   it("verifiserer e-post med gyldig token", async () => {
-    prismaMock.user.findUnique.mockResolvedValue({ id: 1, emailVerifyToken: "tok" });
+    prismaMock.user.findUnique.mockResolvedValue({ id: 1, emailVerifyToken: "tok", emailVerifyTokenExpiresAt: new Date(Date.now() + 86400000) });
     prismaMock.user.update.mockResolvedValue({});
 
     const ok = await verifyEmailToken("tok");
@@ -119,8 +119,17 @@ describe("auth", () => {
     expect(ok).toBe(true);
     expect(prismaMock.user.update).toHaveBeenCalledWith({
       where: { id: 1 },
-      data: { emailVerified: true, emailVerifyToken: null },
+      data: { emailVerified: true, emailVerifyToken: null, emailVerifyTokenExpiresAt: null },
     });
+  });
+
+  it("avviser utløpt verifiseringstoken", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ id: 1, emailVerifyToken: "tok", emailVerifyTokenExpiresAt: new Date(Date.now() - 1000) });
+
+    const ok = await verifyEmailToken("tok");
+
+    expect(ok).toBe(false);
+    expect(prismaMock.user.update).not.toHaveBeenCalled();
   });
 
   it("returnerer false for ugyldig verifiseringstoken", async () => {

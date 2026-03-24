@@ -9,7 +9,7 @@ const { getAdminSessionMock, parseAdminIssueInputMock, updatePlannedIssueMock, d
   deletePlannedIssueMock: vi.fn(),
 }));
 
-vi.mock("../../../../lib/admin-auth", () => ({ getAdminSessionFromCookieHeader: getAdminSessionMock }));
+vi.mock("../../../../lib/admin-auth", () => ({ getAdminSessionFromCookieHeader: getAdminSessionMock, verifyCsrfOrigin: () => true }));
 vi.mock("../../../../lib/admin-issue-payload", () => ({
   getAdminIssueMutationErrorStatus: (message: string) => (message.includes("Bare planlagte") ? 409 : 400),
   parseAdminIssueInput: parseAdminIssueInputMock,

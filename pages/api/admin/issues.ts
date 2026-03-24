@@ -1,12 +1,17 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { getAdminIssueMutationErrorStatus, parseAdminIssueInput } from '../../../lib/admin-issue-payload';
-import { getAdminSessionFromCookieHeader } from '../../../lib/admin-auth';
+import { getAdminSessionFromCookieHeader, verifyCsrfOrigin } from '../../../lib/admin-auth';
 import { createIssue } from '../../../lib/issues';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     res.status(405).end();
+    return;
+  }
+
+  if (!verifyCsrfOrigin(req.headers)) {
+    res.status(403).json({ error: 'Ugyldig opprinnelse for forespørselen.' });
     return;
   }
 

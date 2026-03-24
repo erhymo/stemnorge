@@ -1,3 +1,19 @@
+/**
+ * In-memory sliding-window rate limiter.
+ *
+ * ARCHITECTURE NOTE:
+ * This implementation stores counters in process memory. On Vercel (serverless),
+ * each cold-start gets its own Map, so the limit is per-instance rather than
+ * global. This is acceptable because:
+ *   1. It still deters casual abuse and simple bots.
+ *   2. Vercel's edge network already provides basic DDoS mitigation.
+ *   3. Bcrypt's cost factor provides an inherent rate limit on auth endpoints.
+ *
+ * For stricter global rate limiting, replace the `buckets` Map with a shared
+ * store such as Vercel KV or Upstash Redis. The `checkRateLimit` interface
+ * would stay the same – only the storage backend would change.
+ */
+
 type RateLimitEntry = {
   count: number;
   resetAt: number;
@@ -32,11 +48,10 @@ export type RateLimitConfig = {
 };
 
 /**
- * Simple in-memory rate limiter keyed by IP + namespace.
- * Works per serverless instance – not perfectly shared, but good
- * enough to deter casual abuse and simple bot attacks.
+ * Check whether the given IP is within the rate limit for the given config.
  *
- * Returns `{ allowed: true }` or `{ allowed: false, retryAfterSeconds }`.
+ * Returns `{ allowed: true }` when the request should proceed, or
+ * `{ allowed: false, retryAfterSeconds }` when the limit has been exceeded.
  */
 export function checkRateLimit(
   ip: string,
