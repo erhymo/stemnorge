@@ -1,10 +1,21 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { loginUser } from '../../lib/auth';
+import { checkRateLimit, getClientIp } from '../../lib/rate-limit';
+
+const LOGIN_RATE_LIMIT = { namespace: 'login', maxRequests: 10, windowSeconds: 300 };
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     res.status(405).end();
+    return;
+  }
+
+  const ip = getClientIp(req.headers);
+  const limit = checkRateLimit(ip, LOGIN_RATE_LIMIT);
+
+  if (!limit.allowed) {
+    res.status(429).json({ error: `For mange innloggingsforsøk. Prøv igjen om ${limit.retryAfterSeconds} sekunder.` });
     return;
   }
 

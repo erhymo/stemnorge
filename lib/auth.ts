@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 import { buildVerificationEmail, sendEmail } from "@/lib/email";
+import { isDisposableEmail, normalizeEmailAlias } from "@/lib/email-validation";
 import { getJwtSecret } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 
@@ -35,7 +36,7 @@ function normalizeEmail(email: string): string | null {
     return null;
   }
 
-  return trimmed;
+  return normalizeEmailAlias(trimmed);
 }
 
 export async function registerUser(email: string, password: string, name: string) {
@@ -44,6 +45,10 @@ export async function registerUser(email: string, password: string, name: string
 
   if (!normalizedEmail) {
     throw new Error("Ugyldig e-postadresse.");
+  }
+
+  if (isDisposableEmail(normalizedEmail)) {
+    throw new Error("Engångs-e-postadresser er ikke tillatt. Bruk en vanlig e-postkonto.");
   }
 
   if (!trimmedName) {
