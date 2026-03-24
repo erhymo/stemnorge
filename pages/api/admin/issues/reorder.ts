@@ -5,7 +5,7 @@ import { swapIssueSchedules } from "../../../../lib/issues";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
-    res.status(405).end();
+    res.setHeader("Allow", "POST").status(405).end();
     return;
   }
 

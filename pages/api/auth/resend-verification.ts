@@ -7,7 +7,7 @@ const RESEND_VERIFICATION_RATE_LIMIT = { namespace: "resend-verification", maxRe
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
-    res.status(405).end();
+    res.setHeader("Allow", "POST").status(405).end();
     return;
   }
 

@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { getAdminSessionFromCookieHeader } from "../../../../../lib/admin-auth";
+import { getAdminSessionFromCookieHeader, verifyCsrfOrigin } from "../../../../../lib/admin-auth";
 import { publishIssueNow } from "../../../../../lib/issues";
 
 function readIssueId(value: string | string[] | undefined) {
@@ -11,7 +11,12 @@ function readIssueId(value: string | string[] | undefined) {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
-    res.status(405).end();
+    res.setHeader("Allow", "POST").status(405).end();
+    return;
+  }
+
+  if (!verifyCsrfOrigin(req.headers)) {
+    res.status(403).json({ error: "Ugyldig opprinnelse for forespørselen." });
     return;
   }
 

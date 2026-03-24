@@ -5,13 +5,22 @@ const VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 /**
  * Verify a Turnstile token server-side.
  * Returns true if the token is valid, false otherwise.
- * If no secret key is configured (e.g. in dev), verification is skipped.
+ *
+ * In production, verification is mandatory – if TURNSTILE_SECRET_KEY is not
+ * configured the check will always fail. In development, missing key skips
+ * verification to simplify local testing.
  */
 export async function verifyTurnstileToken(token: string | undefined): Promise<boolean> {
   const secret = getTurnstileSecretKey();
 
-  // Skip verification in development when no key is set
   if (!secret) {
+    // In production, a missing key means misconfiguration – reject.
+    if (process.env.NODE_ENV === "production") {
+      console.error("TURNSTILE_SECRET_KEY is not set – rejecting verification in production.");
+      return false;
+    }
+
+    // In development, skip verification for convenience.
     return true;
   }
 

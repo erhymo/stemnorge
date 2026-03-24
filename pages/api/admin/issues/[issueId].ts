@@ -12,7 +12,7 @@ function readIssueId(value: string | string[] | undefined) {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "PATCH" && req.method !== "DELETE") {
-    res.status(405).end();
+    res.setHeader("Allow", "PATCH, DELETE").status(405).end();
     return;
   }
 

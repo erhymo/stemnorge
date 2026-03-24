@@ -9,7 +9,7 @@ function isVoteValue(value: unknown): value is 'for' | 'mot' {
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    res.status(405).end();
+    res.setHeader('Allow', 'POST').status(405).end();
     return;
   }
 
