@@ -24,6 +24,7 @@ export default function VoteClient({ issue }: VoteClientProps) {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingVote, setExistingVote] = useState<string | null>(null);
 
   useEffect(() => {
     const storedUser = getStoredUser();
@@ -37,6 +38,18 @@ export default function VoteClient({ issue }: VoteClientProps) {
     setUser(storedUser);
     setToken(storedToken);
     setLoading(false);
+
+    // Check if user already voted on this issue
+    fetch("/api/my-vote", {
+      headers: { Authorization: `Bearer ${storedToken}` },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.vote?.value) {
+          setExistingVote(data.vote.value);
+        }
+      })
+      .catch(() => {});
   }, [router]);
 
   async function handleVote(choice: "for" | "mot") {
@@ -56,6 +69,13 @@ export default function VoteClient({ issue }: VoteClientProps) {
       const data = await res.json();
 
       if (res.ok) {
+        if (existingVote) {
+          // User changed their vote – stay on page and update marker
+          setExistingVote(choice);
+          setMessage("Stemmen din er oppdatert!");
+          return;
+        }
+
         router.push("/thanks");
         router.refresh();
         return;
@@ -103,16 +123,29 @@ export default function VoteClient({ issue }: VoteClientProps) {
         </div>
       </section>
 
+      {existingVote && (
+        <section className="rounded-[2rem] border border-cyan-300/20 bg-cyan-400/5 p-6 text-center">
+          <p className="text-lg text-white">
+            ✅ Du har stemt{" "}
+            <span className={existingVote === "for" ? "font-semibold text-emerald-300" : "font-semibold text-rose-300"}>
+              {existingVote === "for" ? issue.supportLabel : issue.opposeLabel}
+            </span>{" "}
+            på denne saken.
+          </p>
+          <p className="mt-2 text-sm text-slate-400">Du kan endre stemmen din ved å velge på nytt nedenfor.</p>
+        </section>
+      )}
+
       <section className="grid gap-6 md:grid-cols-2">
-        <button type="button" onClick={() => handleVote("for")} disabled={isSubmitting} className="rounded-[2rem] border border-emerald-300/15 bg-emerald-400/5 p-8 text-left transition hover:bg-emerald-400/10 disabled:cursor-not-allowed disabled:opacity-70">
+        <button type="button" onClick={() => handleVote("for")} disabled={isSubmitting} className={`rounded-[2rem] border p-8 text-left transition disabled:cursor-not-allowed disabled:opacity-70 ${existingVote === "for" ? "border-emerald-300/40 bg-emerald-400/15 ring-2 ring-emerald-400/30" : "border-emerald-300/15 bg-emerald-400/5 hover:bg-emerald-400/10"}`}>
           <p className="mb-3 text-sm uppercase tracking-[0.3em] text-emerald-200/80">{issue.supportLabel}</p>
-          <h2 className="mb-4 text-3xl text-white">Stem for forslaget</h2>
+          <h2 className="mb-4 text-3xl text-white">{existingVote === "for" ? "✓ Din stemme" : "Stem for forslaget"}</h2>
           <RichTextBlock text={issue.argumentFor} className="space-y-4 text-base leading-8 text-slate-200" />
         </button>
 
-        <button type="button" onClick={() => handleVote("mot")} disabled={isSubmitting} className="rounded-[2rem] border border-rose-300/15 bg-rose-400/5 p-8 text-left transition hover:bg-rose-400/10 disabled:cursor-not-allowed disabled:opacity-70">
+        <button type="button" onClick={() => handleVote("mot")} disabled={isSubmitting} className={`rounded-[2rem] border p-8 text-left transition disabled:cursor-not-allowed disabled:opacity-70 ${existingVote === "mot" ? "border-rose-300/40 bg-rose-400/15 ring-2 ring-rose-400/30" : "border-rose-300/15 bg-rose-400/5 hover:bg-rose-400/10"}`}>
           <p className="mb-3 text-sm uppercase tracking-[0.3em] text-rose-200/80">{issue.opposeLabel}</p>
-          <h2 className="mb-4 text-3xl text-white">Stem mot forslaget</h2>
+          <h2 className="mb-4 text-3xl text-white">{existingVote === "mot" ? "✓ Din stemme" : "Stem mot forslaget"}</h2>
           <RichTextBlock text={issue.argumentAgainst} className="space-y-4 text-base leading-8 text-slate-200" />
         </button>
       </section>
