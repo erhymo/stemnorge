@@ -150,9 +150,9 @@ async function requestOpenAiDraft(input: GenerateAdminIssueDraftInput, apiKey: s
             "Du lager førsteutkast til politiske saker for en norsk stemmeapp. Skriv på norsk bokmål.",
             "OBJEKTIVITET: Feltene overview og background skal være strengt objektive og nøytrale. Ikke ta stilling, ikke bruk ladede ord, og presenter alle sider likeverdig. Kun argumentFor og argumentAgainst skal være partiske.",
             "TALL OG STATISTIKK: Bruk konkrete, verifiserbare tall, prosenter og statistikk der det er relevant (f.eks. kostnader, antall berørte, tidsrammer, internasjonale sammenligninger). Referer til kjente offentlige kilder som SSB, Regjeringen, NOU-er eller internasjonale organisasjoner. Ikke finn på tall — bruk kun fakta du er sikker på.",
-            "LENGDEKRAV: overview må være minst 150 tegn. background må være minst 600 tegn. argumentFor og argumentAgainst må hver være minst 400 tegn.",
+            "LENGDEKRAV: overview må være minst 150 tegn. background må være minst 800 tegn. argumentFor og argumentAgainst må hver være minst 400 tegn.",
             "Vær nøktern, balansert, konkret og pedagogisk. Målet er at leseren skal forstå hva saken handler om og kunne ta en informert stilling.",
-            "Skriv overview som en informativ, objektiv ingress på 3-5 setninger. Skriv background i 3-5 avsnitt med faktisk kontekst, tall og nåværende situasjon. Skriv argumentFor og argumentAgainst i 3-4 avsnitt hver med konkrete gevinster/risikoer.",
+            "Skriv overview som en informativ, objektiv ingress på 3-5 setninger. Skriv background i 4-6 avsnitt med faktisk kontekst, tall, historikk og nåværende situasjon — gjerne med internasjonale sammenligninger der det er relevant. Skriv argumentFor og argumentAgainst i 3-4 avsnitt hver med konkrete gevinster/risikoer.",
             "Returner kun gyldig JSON med feltene title, question, overview, background, argumentFor og argumentAgainst.",
           ].join(" "),
         },
@@ -167,7 +167,7 @@ async function requestOpenAiDraft(input: GenerateAdminIssueDraftInput, apiKey: s
               overview:
                 "3-5 objektive setninger (minst 150 tegn) som forklarer hva saken gjelder, hvorfor temaet er relevant, og hvilke dimensjoner som gjør spørsmålet viktig. Bruk gjerne et konkret tall eller faktum som viser omfanget.",
               background:
-                "3-5 avsnitt (minst 600 tegn) som objektivt forklarer bakgrunn, dagens situasjon og hvorfor saken diskuteres. Inkluder verifiserbare tall og statistikk der det er mulig (kostnader, antall berørte, tidslinjer). Referer til kjente kilder. Ikke ta stilling — forklar begge sider likeverdig.",
+                "4-6 avsnitt (minst 800 tegn) som objektivt forklarer bakgrunn, historikk, dagens situasjon og hvorfor saken diskuteres. Inkluder verifiserbare tall og statistikk der det er mulig (kostnader, antall berørte, tidslinjer, internasjonale sammenligninger). Referer til kjente offentlige kilder. Ikke ta stilling — forklar begge sider likeverdig.",
               argumentFor:
                 "3-4 avsnitt (minst 400 tegn) som beskriver hvorfor noen støtter saken, med konkrete gevinster, tall og eksempler. Forklar hvilke problemer tilhengerne mener tiltaket løser.",
               argumentAgainst:
@@ -228,11 +228,13 @@ export function generateLocalAdminIssueDraft({ topic, context }: GenerateAdminIs
       ? [
           `Saken om ${topicLower} handler ikke bare om et enkelt ja-eller-nei-spørsmål, men om hvilke mål samfunnet ønsker å prioritere og hvilke konsekvenser ulike valg kan få over tid. ${capitalizeFirst(topicLower)} kan berøre både økonomi, trygghet, rettferdighet og tillit, avhengig av hvordan tiltaket utformes.${contextSentence}`,
           `For velgeren er det derfor viktig å forstå hva dagens situasjon er, hvilke problemer tilhengerne mener må løses, og hvilke avveininger som følger med. Et godt bakteppe bør gjøre det lettere å se hvorfor saken engasjerer og hvorfor flere hensyn kan trekke i ulike retninger.`,
+          `Historisk sett har lignende spørsmål blitt diskutert i Norge og andre land, ofte med ulike utfall avhengig av politisk kontekst, økonomiske rammer og samfunnets prioriteringer på det aktuelle tidspunktet. Erfaringer fra andre land kan gi nyttig innsikt, men må alltid vurderes opp mot norske forhold og verdier.`,
           `Når temaet vurderes, er det også naturlig å spørre hvem som blir mest berørt, hvor raskt eventuelle effekter kan komme, og om et nytt tiltak vil fungere bedre enn å justere det som allerede finnes i dag.`,
         ].join("\n\n")
       : [
           `Saken om ${topicLower} handler ikke bare om et enkelt ja-eller-nei-spørsmål, men om hvilke mål samfunnet ønsker å prioritere og hvilke konsekvenser ulike valg kan få over tid. ${capitalizeFirst(topicLower)} kan berøre både økonomi, trygghet, rettferdighet og tillit, avhengig av hvordan tiltaket utformes.`,
           `For velgeren er det derfor viktig å forstå hva dagens situasjon er, hvilke problemer tilhengerne mener må løses, og hvilke avveininger som følger med. Et godt bakteppe bør gjøre det lettere å se hvorfor saken engasjerer og hvorfor flere hensyn kan trekke i ulike retninger.`,
+          `Historisk sett har lignende spørsmål blitt diskutert i Norge og andre land, ofte med ulike utfall avhengig av politisk kontekst, økonomiske rammer og samfunnets prioriteringer på det aktuelle tidspunktet. Erfaringer fra andre land kan gi nyttig innsikt, men må alltid vurderes opp mot norske forhold og verdier.`,
           `Når temaet vurderes, er det også naturlig å spørre hvem som blir mest berørt, hvor raskt eventuelle effekter kan komme, og om et nytt tiltak vil fungere bedre enn å justere det som allerede finnes i dag.`,
         ].join("\n\n"),
     argumentFor: normalizedContext

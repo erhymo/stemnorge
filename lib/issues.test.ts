@@ -45,6 +45,7 @@ const LONG_OVERVIEW =
 const LONG_BACKGROUND = [
   "Dette er en bakgrunnstekst som beskriver dagens situasjon, hvorfor saken er aktuell og hvilke grupper som blir berørt når politikken endres. Den gir nok sammenheng til at leseren ser hvordan spørsmålet henger sammen med større prioriteringer i samfunnet.",
   "Bakgrunnen bør også forklare hvilke hensyn som trekker i ulike retninger, og hvorfor det ikke alltid finnes en enkel løsning. På den måten får velgeren et bedre grunnlag for å vurdere både mål, risiko og mulige konsekvenser.",
+  "Historisk sett har lignende spørsmål blitt diskutert i Norge og andre land, ofte med ulike utfall avhengig av politisk kontekst, økonomiske rammer og samfunnets prioriteringer på det aktuelle tidspunktet.",
   "Det er også viktig å se saken i en bredere kontekst, der både historiske erfaringer og fremtidige utviklingstrekk spiller inn. Når flere faktorer virker sammen, blir det lettere å forstå hvorfor meningene spriker og hvorfor kompromisser ofte er nødvendig for å komme videre.",
 ].join("\n\n");
 
@@ -192,7 +193,7 @@ describe("issue mutations", () => {
         },
         new Date("2030-01-01T00:00:00.000Z"),
       ),
-    ).rejects.toThrow("Bakgrunn må være minst 600 tegn.");
+    ).rejects.toThrow("Bakgrunn må være minst 800 tegn.");
   });
 
   it("sletter en planlagt sak", async () => {
