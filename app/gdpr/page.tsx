@@ -31,8 +31,7 @@ export default function GDPRPage() {
         <h2 className="mb-4 text-2xl text-white">Hvorfor vi trenger opplysningene</h2>
         <p className="text-base leading-8 text-slate-300">
           Opplysningene brukes for å verifisere kontoer, beskytte innloggingen din, og sørge for at én konto bare kan
-          stemme én gang per sak. Vi ønsker å lagre minst mulig data og formulere dette tydelig i personvernerklæringen
-          når V1 går live.
+          stemme én gang per sak. Vi lagrer minst mulig data og oppdaterer denne siden fortløpende.
         </p>
       </section>
     </div>

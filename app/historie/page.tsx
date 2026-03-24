@@ -13,7 +13,7 @@ export default async function HistoriePage() {
         <h1 className="text-4xl text-white md:text-5xl">Tidligere saker og publiserte resultater</h1>
         <p className="text-lg leading-8 text-slate-300">
           Resultater publiseres først når ukens avstemning er avsluttet. Historikken viser oppsummering,
-          argumenter, kilder og prosentvis utfall.
+          argumenter og prosentvis utfall.
         </p>
       </div>
 

@@ -63,7 +63,7 @@ export default async function Home() {
           <div className="space-y-4 text-sm text-slate-300">
             <div>
               <p className="font-medium text-white">Mandag 06:00</p>
-              <p>Ny sak publiseres med bakgrunn, argumenter og kilder.</p>
+              <p>Ny sak publiseres med bakgrunn og argumenter.</p>
             </div>
             <div>
               <p className="font-medium text-white">Gjennom uka</p>
