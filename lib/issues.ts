@@ -153,7 +153,11 @@ async function ensureSeedIssues() {
     seedIssues.map((issue) =>
       prisma.issue.upsert({
         where: { slug: issue.slug },
-        update: {},
+        update: {
+          publishedSupportPercent: issue.supportPercent,
+          publishedOpposePercent: issue.opposePercent,
+          resultSummary: issue.resultSummary,
+        },
         create: {
           slug: issue.slug,
           title: issue.title,

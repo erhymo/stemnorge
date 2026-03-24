@@ -30,6 +30,10 @@ export const currentIssue: PublishedIssue = {
     "Motstandere peker på høye investeringskostnader, lang byggetid og usikkerhet rundt hvor raskt kjernekraft faktisk kan bidra sammenlignet med andre tiltak. De trekker også fram spørsmål om avfall, beredskap og at politisk oppmerksomhet og kapital kan bli bundet opp i prosjekter som ligger langt fram i tid.",
   supportLabel: "For",
   opposeLabel: "Mot",
+  supportPercent: 73,
+  opposePercent: 27,
+  resultSummary:
+    "Et tydelig flertall mente Norge bør åpne for å bygge kjernekraftverk, og vektla behovet for stabil og utslippsfri kraft i et mer elektrifisert samfunn.",
   sources: [
     { title: "Kjernekraft i Norge", publisher: "NVE", url: "https://www.nve.no" },
     { title: "Nuclear Power in a Clean Energy System", publisher: "IEA", url: "https://www.iea.org" },
