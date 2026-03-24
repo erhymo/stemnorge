@@ -7,6 +7,7 @@ import AdminIssueForm from "@/components/AdminIssueForm";
 import AdminPlannedIssues from "@/components/AdminPlannedIssues";
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-auth";
 import { getCurrentIssueView, getHistoricalIssueViews, getPlannedIssueRecords } from "@/lib/issues";
+import { prisma } from "@/lib/prisma";
 import { getAgendaTipsForAdmin } from "@/lib/tips";
 
 export const dynamic = "force-dynamic";
@@ -32,11 +33,13 @@ export default async function AdminPage() {
     redirect("/admin/login");
   }
 
-  const [currentIssue, plannedIssues, historicalIssues, agendaTipsResult] = await Promise.all([
+  const [currentIssue, plannedIssues, historicalIssues, agendaTipsResult, totalUsers, verifiedUsers] = await Promise.all([
     getCurrentIssueView(),
     getPlannedIssueRecords(),
     getHistoricalIssueViews(),
     getAgendaTipsForAdmin(),
+    prisma.user.count(),
+    prisma.user.count({ where: { emailVerified: true } }),
   ]);
   const { tips: agendaTips, unavailable: agendaTipsUnavailable } = agendaTipsResult;
 
@@ -72,6 +75,19 @@ export default async function AdminPage() {
           Denne versjonen lar deg generere et førsteutkast med AI, deretter opprette, redigere og slette planlagte saker med publiseringstid og stengetid.
           Overlappende tidsvinduer avvises, slik at bare én sak kan være aktiv om gangen.
         </p>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <article className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-6">
+          <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Registrerte brukere</p>
+          <p className="mt-2 text-4xl font-semibold text-white">{totalUsers}</p>
+          <p className="mt-1 text-sm text-slate-400">totalt registrert</p>
+        </article>
+        <article className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-6">
+          <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Verifiserte brukere</p>
+          <p className="mt-2 text-4xl font-semibold text-emerald-200">{verifiedUsers}</p>
+          <p className="mt-1 text-sm text-slate-400">har bekreftet e-post</p>
+        </article>
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
