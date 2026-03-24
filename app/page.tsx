@@ -1,12 +1,16 @@
 import Link from "next/link";
 
 import RichTextBlock from "@/components/RichTextBlock";
-import { getCurrentIssueView } from "@/lib/issues";
+import { getCurrentIssueView, getHistoricalIssueViews } from "@/lib/issues";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const currentIssue = await getCurrentIssueView();
+  const [currentIssue, historicalIssues] = await Promise.all([
+    getCurrentIssueView(),
+    getHistoricalIssueViews(),
+  ]);
+  const lastIssue = historicalIssues[0];
 
   if (!currentIssue) {
     return (
@@ -70,6 +74,19 @@ export default async function Home() {
               <p>Avstemningen lukkes og resultatet publiseres offentlig med oppsummering.</p>
             </div>
           </div>
+          {lastIssue && lastIssue.supportPercent != null && lastIssue.opposePercent != null && (
+            <div className="border-t border-white/10 pt-4">
+              <p className="mb-2 font-medium text-white">Siste avstemning</p>
+              <p className="text-sm text-slate-300">{lastIssue.question}</p>
+              <div className="mt-2 flex gap-4 text-sm">
+                <span className="text-emerald-200">{lastIssue.supportLabel} {lastIssue.supportPercent}%</span>
+                <span className="text-rose-200">{lastIssue.opposeLabel} {lastIssue.opposePercent}%</span>
+              </div>
+              <Link href={`/historie/${lastIssue.slug}`} className="mt-2 inline-block text-xs text-cyan-200/70 transition hover:text-white">
+                Se detaljer →
+              </Link>
+            </div>
+          )}
         </aside>
       </section>
 
