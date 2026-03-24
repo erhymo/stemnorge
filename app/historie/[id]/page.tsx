@@ -67,6 +67,7 @@ export default async function HistorieDetaljPage({ params }: HistorieDetaljPageP
         </article>
       </section>
 
+      {/* Kildegrunnlag – skjult inntil videre
       <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8">
         <p className="mb-4 text-sm uppercase tracking-[0.3em] text-slate-400">Kilder</p>
         <div className="grid gap-4 md:grid-cols-2">
@@ -84,6 +85,7 @@ export default async function HistorieDetaljPage({ params }: HistorieDetaljPageP
           ))}
         </div>
       </section>
+      */}
     </div>
   );
 }

@@ -121,6 +121,7 @@ export default async function Home() {
         </article>
       </section>
 
+      {/* Kildegrunnlag – skjult inntil videre
       <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -147,6 +148,7 @@ export default async function Home() {
           ))}
         </div>
       </section>
+      */}
     </div>
   );
 }
