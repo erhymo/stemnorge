@@ -1,7 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+
+import Turnstile from "@/components/Turnstile";
+
+const TURNSTILE_SITE_KEY = "0x4AAAAAACvZnUiXTf3IqMWF";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -11,6 +15,10 @@ export default function RegisterPage() {
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registered, setRegistered] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+  const handleTurnstileVerify = useCallback((token: string) => setTurnstileToken(token), []);
+  const handleTurnstileExpire = useCallback(() => setTurnstileToken(null), []);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -31,13 +39,18 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!turnstileToken) {
+      setMessage("Vennligst fullfør verifiseringen (ikke en robot).");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, turnstileToken }),
       });
 
       const data = await res.json();
@@ -148,9 +161,15 @@ export default function RegisterPage() {
             </span>
           </label>
 
+          <Turnstile
+            siteKey={TURNSTILE_SITE_KEY}
+            onVerify={handleTurnstileVerify}
+            onExpire={handleTurnstileExpire}
+          />
+
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !turnstileToken}
             className="mt-2 rounded-full bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isSubmitting ? "Registrerer..." : "Opprett konto"}

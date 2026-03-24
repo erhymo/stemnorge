@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { registerUser } from '../../lib/auth';
 import { checkRateLimit, getClientIp } from '../../lib/rate-limit';
+import { verifyTurnstileToken } from '../../lib/turnstile';
 
 const REGISTER_RATE_LIMIT = { namespace: 'register', maxRequests: 5, windowSeconds: 600 };
 
@@ -19,7 +20,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
-  const { email, password, name } = req.body ?? {};
+  const { email, password, name, turnstileToken } = req.body ?? {};
+
+  const turnstileOk = await verifyTurnstileToken(turnstileToken);
+
+  if (!turnstileOk) {
+    res.status(400).json({ error: 'Verifisering feilet. Prøv å laste siden på nytt.' });
+    return;
+  }
 
   if (
     typeof email !== 'string' ||

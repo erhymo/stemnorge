@@ -48,6 +48,10 @@ export function getAdminSessionSecret() {
   return readSecret("ADMIN_SESSION_SECRET", ["JWT_SECRET"]);
 }
 
+export function getTurnstileSecretKey() {
+  return readEnv("TURNSTILE_SECRET_KEY");
+}
+
 export function getOpenAiApiKey() {
   return readEnv("OPENAI_API_KEY");
 }
