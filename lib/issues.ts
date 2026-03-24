@@ -146,39 +146,49 @@ export function isIssueOpen(issue: Pick<Issue, "publishedAt" | "closesAt">, now 
   return issue.publishedAt <= now && issue.closesAt > now;
 }
 
-async function ensureSeedIssues() {
-  const seedIssues = getSeedIssues();
+let seedPromise: Promise<void> | null = null;
 
-  await Promise.all(
-    seedIssues.map((issue) =>
-      prisma.issue.upsert({
-        where: { slug: issue.slug },
-        update: {
-          publishedSupportPercent: issue.supportPercent,
-          publishedOpposePercent: issue.opposePercent,
-          resultSummary: issue.resultSummary,
-        },
-        create: {
-          slug: issue.slug,
-          title: issue.title,
-          question: issue.question,
-          periodLabel: issue.periodLabel,
-          overview: issue.overview,
-          background: issue.background,
-          argumentFor: issue.argumentFor,
-          argumentAgainst: issue.argumentAgainst,
-          resultSummary: issue.resultSummary,
-          supportLabel: issue.supportLabel,
-          opposeLabel: issue.opposeLabel,
-          publishedSupportPercent: issue.supportPercent,
-          publishedOpposePercent: issue.opposePercent,
-          sourcesJson: JSON.stringify(issue.sources),
-          publishedAt: issue.publishedAt,
-          closesAt: issue.closesAt,
-        },
-      }),
-    ),
-  );
+async function ensureSeedIssues() {
+  if (seedPromise) {
+    return seedPromise;
+  }
+
+  seedPromise = (async () => {
+    const seedIssues = getSeedIssues();
+
+    await Promise.all(
+      seedIssues.map((issue) =>
+        prisma.issue.upsert({
+          where: { slug: issue.slug },
+          update: {
+            publishedSupportPercent: issue.supportPercent,
+            publishedOpposePercent: issue.opposePercent,
+            resultSummary: issue.resultSummary,
+          },
+          create: {
+            slug: issue.slug,
+            title: issue.title,
+            question: issue.question,
+            periodLabel: issue.periodLabel,
+            overview: issue.overview,
+            background: issue.background,
+            argumentFor: issue.argumentFor,
+            argumentAgainst: issue.argumentAgainst,
+            resultSummary: issue.resultSummary,
+            supportLabel: issue.supportLabel,
+            opposeLabel: issue.opposeLabel,
+            publishedSupportPercent: issue.supportPercent,
+            publishedOpposePercent: issue.opposePercent,
+            sourcesJson: JSON.stringify(issue.sources),
+            publishedAt: issue.publishedAt,
+            closesAt: issue.closesAt,
+          },
+        }),
+      ),
+    );
+  })();
+
+  return seedPromise;
 }
 
 async function getVoteBreakdown(issueId: number) {

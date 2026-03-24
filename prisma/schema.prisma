@@ -24,6 +24,7 @@ model PasswordResetToken {
   id        Int      @id @default(autoincrement())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
+  tokenId   String   @unique
   tokenHash String
   expiresAt DateTime
   usedAt    DateTime?

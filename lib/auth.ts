@@ -171,15 +171,18 @@ export async function requestPasswordReset(email: string) {
 
   const { buildPasswordResetEmail } = await import("@/lib/email");
 
-  const token = randomUUID();
-  const tokenHash = await bcrypt.hash(token, 10);
+  const tokenId = randomUUID();
+  const secret = randomUUID();
+  const tokenHash = await bcrypt.hash(secret, 10);
   const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
   await prisma.passwordResetToken.create({
-    data: { userId: user.id, tokenHash, expiresAt },
+    data: { userId: user.id, tokenId, tokenHash, expiresAt },
   });
 
-  const emailContent = buildPasswordResetEmail(user.name, token);
+  // The full token sent to the user is "tokenId.secret"
+  const fullToken = `${tokenId}.${secret}`;
+  const emailContent = buildPasswordResetEmail(user.name, fullToken);
   await sendEmail({ to: normalizedEmail, ...emailContent });
 }
 
@@ -188,25 +191,30 @@ export async function resetPassword(token: string, newPassword: string) {
     throw new Error("Ugyldig token eller passord (minst 8 tegn).");
   }
 
-  const recentTokens = await prisma.passwordResetToken.findMany({
-    where: { usedAt: null, expiresAt: { gt: new Date() } },
-    include: { user: true },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
-
-  let matchedRecord = null;
-
-  for (const record of recentTokens) {
-    const isMatch = await bcrypt.compare(token, record.tokenHash);
-
-    if (isMatch) {
-      matchedRecord = record;
-      break;
-    }
+  // Token format: "tokenId.secret"
+  const dotIndex = token.indexOf(".");
+  if (dotIndex === -1) {
+    throw new Error("Ugyldig eller utløpt tilbakestillingslenke.");
   }
 
-  if (!matchedRecord) {
+  const tokenId = token.slice(0, dotIndex);
+  const secret = token.slice(dotIndex + 1);
+
+  if (!tokenId || !secret) {
+    throw new Error("Ugyldig eller utløpt tilbakestillingslenke.");
+  }
+
+  const record = await prisma.passwordResetToken.findUnique({
+    where: { tokenId },
+  });
+
+  if (!record || record.usedAt || record.expiresAt <= new Date()) {
+    throw new Error("Ugyldig eller utløpt tilbakestillingslenke.");
+  }
+
+  const isMatch = await bcrypt.compare(secret, record.tokenHash);
+
+  if (!isMatch) {
     throw new Error("Ugyldig eller utløpt tilbakestillingslenke.");
   }
 
@@ -214,11 +222,11 @@ export async function resetPassword(token: string, newPassword: string) {
 
   await prisma.$transaction([
     prisma.user.update({
-      where: { id: matchedRecord.userId },
+      where: { id: record.userId },
       data: { password: passwordHash, emailVerified: true },
     }),
     prisma.passwordResetToken.update({
-      where: { id: matchedRecord.id },
+      where: { id: record.id },
       data: { usedAt: new Date() },
     }),
   ]);
