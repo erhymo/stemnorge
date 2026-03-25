@@ -58,7 +58,7 @@ function ResetPasswordContent() {
   if (success) {
     return (
       <div className="mx-auto flex min-h-[calc(100vh-81px)] w-full max-w-xl items-center justify-center px-6 py-12">
-        <div className="space-y-6 rounded-[2rem] border border-white/10 bg-slate-900/80 p-8 text-center shadow-xl">
+        <div className="space-y-6 rounded-2xl border border-white/10 bg-slate-900/80 p-5 text-center shadow-xl md:rounded-[2rem] md:p-8">
           <div className="text-5xl">✅</div>
           <h1 className="text-2xl text-white">Passordet er oppdatert</h1>
           <p className="text-slate-300">Du kan nå logge inn med det nye passordet ditt.</p>
@@ -75,7 +75,7 @@ function ResetPasswordContent() {
 
   return (
     <div className="mx-auto flex min-h-[calc(100vh-81px)] w-full max-w-xl items-center justify-center px-6 py-12">
-      <div className="w-full space-y-6 rounded-[2rem] border border-white/10 bg-slate-900/80 p-8 shadow-xl">
+      <div className="w-full space-y-6 rounded-2xl border border-white/10 bg-slate-900/80 p-5 shadow-xl md:rounded-[2rem] md:p-8">
         <div className="space-y-2">
           <h1 className="text-2xl text-white">Nytt passord</h1>
           <p className="text-sm text-slate-400">Velg et nytt passord for kontoen din.</p>

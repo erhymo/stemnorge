@@ -71,7 +71,7 @@ export default function RegisterPage() {
   if (registered) {
     return (
       <div className="mx-auto flex min-h-[calc(100vh-81px)] w-full max-w-xl items-center justify-center px-6 py-12">
-        <div className="space-y-6 rounded-[2rem] border border-white/10 bg-slate-900/80 p-8 text-center shadow-xl">
+        <div className="space-y-6 rounded-2xl border border-white/10 bg-slate-900/80 p-5 text-center shadow-xl md:rounded-[2rem] md:p-8">
           <div className="text-5xl">📧</div>
           <h1 className="text-2xl text-white">Sjekk e-posten din</h1>
           <p className="text-slate-300">
@@ -94,7 +94,7 @@ export default function RegisterPage() {
 
   return (
     <div className="mx-auto grid min-h-[calc(100vh-81px)] w-full max-w-7xl gap-8 px-6 py-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-      <section className="space-y-6 rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-2xl shadow-cyan-950/20 backdrop-blur">
+      <section className="space-y-6 rounded-2xl border border-white/10 bg-white/5 p-5 shadow-2xl shadow-cyan-950/20 backdrop-blur md:rounded-[2rem] md:p-8">
         <p className="text-sm uppercase tracking-[0.3em] text-cyan-200/80">Registrering</p>
         <h1 className="text-4xl leading-tight text-white md:text-5xl">Opprett konto for å delta i ukens avstemning</h1>
         <p className="max-w-2xl text-lg leading-8 text-slate-300">
@@ -109,7 +109,7 @@ export default function RegisterPage() {
         </ul>
       </section>
 
-      <section className="rounded-[2rem] border border-white/10 bg-slate-900/80 p-8 shadow-xl shadow-slate-950/40">
+      <section className="rounded-2xl border border-white/10 bg-slate-900/80 p-5 shadow-xl shadow-slate-950/40 md:rounded-[2rem] md:p-8">
         <div className="mb-8 space-y-2">
           <h2 className="text-2xl text-white">Opprett konto</h2>
           <p className="text-sm leading-7 text-slate-400">Fyll inn navn, e-post og et passord for å komme i gang.</p>

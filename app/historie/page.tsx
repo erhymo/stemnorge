@@ -19,7 +19,7 @@ export default async function HistoriePage() {
 
       <div className="grid gap-5">
         {historicalIssues.map((issue) => (
-          <article key={issue.slug} className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-6 md:p-8">
+          <article key={issue.slug} className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 md:rounded-[2rem] md:p-8">
             <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
               <div className="max-w-3xl space-y-3">
                 <p className="text-sm text-slate-400">{issue.periodLabel}</p>

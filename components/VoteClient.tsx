@@ -113,7 +113,7 @@ export default function VoteClient({ issue }: VoteClientProps) {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-12 md:py-16">
-      <section className="space-y-5 rounded-[2rem] border border-white/10 bg-white/5 p-8 shadow-2xl shadow-cyan-950/20 backdrop-blur">
+      <section className="space-y-5 rounded-2xl border border-white/10 bg-white/5 p-5 shadow-2xl shadow-cyan-950/20 backdrop-blur md:rounded-[2rem] md:p-8">
         <div className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
           <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-emerald-200">Klar til å stemme</span>
           <span>Innlogget som {user.name}</span>
@@ -127,7 +127,7 @@ export default function VoteClient({ issue }: VoteClientProps) {
       </section>
 
       {existingVote && (
-        <section className="rounded-[2rem] border border-cyan-300/20 bg-cyan-400/5 p-6 text-center">
+        <section className="rounded-2xl border border-cyan-300/20 bg-cyan-400/5 p-5 text-center md:rounded-[2rem] md:p-6">
           <p className="text-lg text-white">
             ✅ Du har stemt{" "}
             <span className={existingVote === "for" ? "font-semibold text-emerald-300" : "font-semibold text-rose-300"}>
@@ -140,20 +140,20 @@ export default function VoteClient({ issue }: VoteClientProps) {
       )}
 
       <section className="grid gap-6 md:grid-cols-2">
-        <button type="button" onClick={() => handleVote("for")} disabled={isSubmitting} className={`rounded-[2rem] border p-8 text-left transition disabled:cursor-not-allowed disabled:opacity-70 ${existingVote === "for" ? "border-emerald-300/40 bg-emerald-400/15 ring-2 ring-emerald-400/30" : "border-emerald-300/15 bg-emerald-400/5 hover:bg-emerald-400/10"}`}>
+        <button type="button" onClick={() => handleVote("for")} disabled={isSubmitting} className={`rounded-2xl border p-5 text-left transition disabled:cursor-not-allowed disabled:opacity-70 md:rounded-[2rem] md:p-8 ${existingVote === "for" ? "border-emerald-300/40 bg-emerald-400/15 ring-2 ring-emerald-400/30" : "border-emerald-300/15 bg-emerald-400/5 hover:bg-emerald-400/10"}`}>
           <p className="mb-3 text-sm uppercase tracking-[0.3em] text-emerald-200/80">{issue.supportLabel}</p>
           <h2 className="mb-4 text-3xl text-white">{existingVote === "for" ? "✓ Din stemme" : "Stem for forslaget"}</h2>
           <RichTextBlock text={issue.argumentFor} className="space-y-4 text-base leading-8 text-slate-200" />
         </button>
 
-        <button type="button" onClick={() => handleVote("mot")} disabled={isSubmitting} className={`rounded-[2rem] border p-8 text-left transition disabled:cursor-not-allowed disabled:opacity-70 ${existingVote === "mot" ? "border-rose-300/40 bg-rose-400/15 ring-2 ring-rose-400/30" : "border-rose-300/15 bg-rose-400/5 hover:bg-rose-400/10"}`}>
+        <button type="button" onClick={() => handleVote("mot")} disabled={isSubmitting} className={`rounded-2xl border p-5 text-left transition disabled:cursor-not-allowed disabled:opacity-70 md:rounded-[2rem] md:p-8 ${existingVote === "mot" ? "border-rose-300/40 bg-rose-400/15 ring-2 ring-rose-400/30" : "border-rose-300/15 bg-rose-400/5 hover:bg-rose-400/10"}`}>
           <p className="mb-3 text-sm uppercase tracking-[0.3em] text-rose-200/80">{issue.opposeLabel}</p>
           <h2 className="mb-4 text-3xl text-white">{existingVote === "mot" ? "✓ Din stemme" : "Stem mot forslaget"}</h2>
           <RichTextBlock text={issue.argumentAgainst} className="space-y-4 text-base leading-8 text-slate-200" />
         </button>
       </section>
 
-      <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-6 text-sm leading-7 text-slate-300">
+      <section className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 text-sm leading-7 text-slate-300 md:rounded-[2rem] md:p-6">
         <p>• Hver konto har én stemme per sak.</p>
         <p>• Et nytt valg før fristen oppdaterer stemmen din.</p>
         <p>• Resultatet publiseres først når saken er avsluttet.</p>

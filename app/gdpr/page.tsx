@@ -10,7 +10,7 @@ export default function GDPRPage() {
         </p>
       </div>
 
-      <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8">
+      <section className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 md:rounded-[2rem] md:p-8">
         <h2 className="mb-4 text-2xl text-white">Det vi lagrer</h2>
         <ul className="space-y-3 text-base leading-8 text-slate-300">
           <li>• fullt navn ved registrering</li>
@@ -19,7 +19,7 @@ export default function GDPRPage() {
         </ul>
       </section>
 
-      <section className="rounded-[2rem] border border-white/10 bg-white/5 p-8">
+      <section className="rounded-2xl border border-white/10 bg-white/5 p-5 md:rounded-[2rem] md:p-8">
         <h2 className="mb-4 text-2xl text-white">Det vi ikke viser offentlig</h2>
         <p className="text-base leading-8 text-slate-300">
           Stemmen din skal være anonym utad. Offentligheten får se når en sak er aktiv, og etter fristen publiseres
@@ -27,7 +27,7 @@ export default function GDPRPage() {
         </p>
       </section>
 
-      <section className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8">
+      <section className="rounded-2xl border border-white/10 bg-slate-900/70 p-5 md:rounded-[2rem] md:p-8">
         <h2 className="mb-4 text-2xl text-white">Hvorfor vi trenger opplysningene</h2>
         <p className="text-base leading-8 text-slate-300">
           Opplysningene brukes for å verifisere kontoer, beskytte innloggingen din, og sørge for at én konto bare kan

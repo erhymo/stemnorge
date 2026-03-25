@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
   if (sent) {
     return (
       <div className="mx-auto flex min-h-[calc(100vh-81px)] w-full max-w-xl items-center justify-center px-6 py-12">
-        <div className="space-y-6 rounded-[2rem] border border-white/10 bg-slate-900/80 p-8 text-center shadow-xl">
+        <div className="space-y-6 rounded-2xl border border-white/10 bg-slate-900/80 p-5 text-center shadow-xl md:rounded-[2rem] md:p-8">
           <div className="text-5xl">📧</div>
           <h1 className="text-2xl text-white">Sjekk e-posten din</h1>
           <p className="text-slate-300">
@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="mx-auto flex min-h-[calc(100vh-81px)] w-full max-w-xl items-center justify-center px-6 py-12">
-      <div className="w-full space-y-6 rounded-[2rem] border border-white/10 bg-slate-900/80 p-8 shadow-xl">
+      <div className="w-full space-y-6 rounded-2xl border border-white/10 bg-slate-900/80 p-5 shadow-xl md:rounded-[2rem] md:p-8">
         <div className="space-y-2">
           <h1 className="text-2xl text-white">Glemt passord</h1>
           <p className="text-sm text-slate-400">Skriv inn e-postadressen din, så sender vi en lenke for å tilbakestille passordet.</p>

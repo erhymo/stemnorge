@@ -38,7 +38,7 @@ export default function AgendaTipForm() {
   }
 
   return (
-    <section className="rounded-[2rem] border border-white/10 bg-slate-900/80 p-8 shadow-xl shadow-slate-950/40">
+    <section className="rounded-2xl border border-white/10 bg-slate-900/80 p-5 shadow-xl shadow-slate-950/40 md:rounded-[2rem] md:p-8">
       <div className="mb-8 space-y-2">
         <h2 className="text-2xl text-white">Send inn et tips</h2>
         <p className="text-sm leading-7 text-slate-400">Skriv kort hva du ønsker at vi skal løfte på agendaen neste uke.</p>
