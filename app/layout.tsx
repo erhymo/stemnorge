@@ -18,6 +18,19 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   title: "StemNorge",
   description: "Les ukens sak, ta stilling og stem anonymt når avstemningen er åpen.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://stemnorge.no"),
+  openGraph: {
+    title: "StemNorge",
+    description: "Ukentlig folkestemme, presentert ryddig",
+    siteName: "StemNorge",
+    locale: "nb_NO",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "StemNorge",
+    description: "Ukentlig folkestemme, presentert ryddig",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
