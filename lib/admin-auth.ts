@@ -139,17 +139,38 @@ export function verifyCsrfOrigin(headers: Record<string, string | string[] | und
     return true;
   }
 
+  const allowedOrigins = new Set<string>();
+
+  // Primary app URL
   const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
 
-  // In development without a configured app URL, allow all origins
-  if (!appUrl) {
+  if (appUrl) {
+    try {
+      const parsed = new URL(appUrl).origin;
+      allowedOrigins.add(parsed);
+
+      // Also allow www variant (or strip www if configured with www)
+      const url = new URL(appUrl);
+      if (url.hostname.startsWith("www.")) {
+        allowedOrigins.add(`${url.protocol}//${url.hostname.slice(4)}`);
+      } else {
+        allowedOrigins.add(`${url.protocol}//www.${url.hostname}`);
+      }
+    } catch {
+      // ignore malformed URL
+    }
+  }
+
+  // Vercel preview/production URLs
+  const vercelUrl = process.env.VERCEL_URL?.trim();
+  if (vercelUrl) {
+    allowedOrigins.add(`https://${vercelUrl}`);
+  }
+
+  // In development without any configured URLs, allow all origins
+  if (allowedOrigins.size === 0) {
     return process.env.NODE_ENV !== "production";
   }
 
-  try {
-    const allowedOrigin = new URL(appUrl).origin;
-    return origin === allowedOrigin;
-  } catch {
-    return false;
-  }
+  return allowedOrigins.has(origin);
 }
