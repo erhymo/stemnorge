@@ -57,7 +57,7 @@ export default function Header() {
           </span>
           <span>
             <span className="block text-base font-semibold tracking-tight">StemNorge</span>
-            <span className="block text-xs text-slate-400">Ukentlig folkestemme, presentert ryddig</span>
+            <span className="block text-xs text-slate-400">Ukentlig folkestemme</span>
           </span>
         </Link>
 
