@@ -29,7 +29,7 @@ vi.mock("@/lib/email", () => ({
   buildPasswordResetEmail: () => ({ subject: "Reset", text: "lenke", html: "<a>lenke</a>" }),
 }));
 
-import { loginUser, registerUser, verifyToken, verifyEmailToken, resendVerificationEmail } from "./auth";
+import { loginUser, registerUser, requestPasswordReset, verifyToken, verifyEmailToken, resendVerificationEmail } from "./auth";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -67,6 +67,14 @@ describe("auth", () => {
     prismaMock.user.findUnique.mockResolvedValue({ id: 1 });
 
     await expect(registerUser("ada@test.no", "hemmelighet1", "Ada")).rejects.toThrow("allerede en konto");
+  });
+
+  it("avviser duplikat konto for legacy Gmail-adresse", async () => {
+    prismaMock.user.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 1, email: "myhre.oyvind@gmail.com" });
+
+    await expect(registerUser("myhre.oyvind@gmail.com", "hemmelighet1", "Ada")).rejects.toThrow("allerede en konto");
   });
 
   it("logger inn med riktig passord og verifisert e-post", async () => {
@@ -107,6 +115,19 @@ describe("auth", () => {
     const result = await loginUser("ukjent@test.no", "hemmelighet1");
 
     expect(result).toBeNull();
+  });
+
+  it("logger inn legacy Gmail-konto lagret med dots", async () => {
+    prismaMock.user.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 3, name: "Ada", email: "myhre.oyvind@gmail.com", password: "hash", emailVerified: true });
+
+    const result = await loginUser("myhre.oyvind@gmail.com", "hemmelighet1");
+
+    expect(result).not.toBeNull();
+    expect(result?.verified).toBe(true);
+    expect(prismaMock.user.findUnique).toHaveBeenNthCalledWith(1, { where: { email: "myhreoyvind@gmail.com" } });
+    expect(prismaMock.user.findUnique).toHaveBeenNthCalledWith(2, { where: { email: "myhre.oyvind@gmail.com" } });
   });
 
   it("verifiserer e-post med gyldig token", async () => {
@@ -156,6 +177,20 @@ describe("auth", () => {
 
     expect(ok).toBe(false);
     expect(sendEmailMock).not.toHaveBeenCalled();
+  });
+
+  it("oppretter passord-reset for legacy Gmail-konto lagret med dots", async () => {
+    prismaMock.user.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 1, name: "Ada", email: "myhre.oyvind@gmail.com", emailVerified: true });
+    prismaMock.passwordResetToken.create.mockResolvedValue({ id: 1 });
+
+    await requestPasswordReset("myhre.oyvind@gmail.com");
+
+    expect(prismaMock.passwordResetToken.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ userId: 1 }),
+    });
+    expect(sendEmailMock).toHaveBeenCalledWith(expect.objectContaining({ to: "myhre.oyvind@gmail.com" }));
   });
 
   it("verifiserer gyldige JWT-payloads", () => {

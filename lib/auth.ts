@@ -39,6 +39,33 @@ function normalizeEmail(email: string): string | null {
   return normalizeEmailAlias(trimmed);
 }
 
+function getRawEmail(email: string): string | null {
+  const trimmed = email.trim().toLowerCase();
+  return trimmed && trimmed.includes("@") && trimmed.length >= 5 ? trimmed : null;
+}
+
+async function findUserByEmail(email: string) {
+  const normalizedEmail = normalizeEmail(email);
+
+  if (!normalizedEmail) {
+    return null;
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+
+  if (user) {
+    return user;
+  }
+
+  const rawEmail = getRawEmail(email);
+
+  if (!rawEmail || rawEmail === normalizedEmail) {
+    return null;
+  }
+
+  return prisma.user.findUnique({ where: { email: rawEmail } });
+}
+
 export async function registerUser(email: string, password: string, name: string) {
   const normalizedEmail = normalizeEmail(email);
   const trimmedName = name.trim();
@@ -59,7 +86,7 @@ export async function registerUser(email: string, password: string, name: string
     throw new Error("Passord må være minst 8 tegn.");
   }
 
-  const existingUser = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const existingUser = await findUserByEmail(email);
 
   if (existingUser) {
     throw new Error("Denne e-postadressen har allerede en konto.");
@@ -83,13 +110,11 @@ export async function registerUser(email: string, password: string, name: string
 }
 
 export async function loginUser(email: string, password: string) {
-  const normalizedEmail = normalizeEmail(email);
-
-  if (!normalizedEmail || !password) {
+  if (!normalizeEmail(email) || !password) {
     return null;
   }
 
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const user = await findUserByEmail(email);
 
   if (!user) {
     return null;
@@ -137,13 +162,11 @@ export async function verifyEmailToken(token: string) {
 }
 
 export async function resendVerificationEmail(email: string) {
-  const normalizedEmail = normalizeEmail(email);
-
-  if (!normalizedEmail) {
+  if (!normalizeEmail(email)) {
     return false;
   }
 
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const user = await findUserByEmail(email);
 
   if (!user || user.emailVerified) {
     return false;
@@ -157,19 +180,17 @@ export async function resendVerificationEmail(email: string) {
   });
 
   const emailContent = buildVerificationEmail(user.name, newToken);
-  await sendEmail({ to: normalizedEmail, ...emailContent });
+  await sendEmail({ to: user.email, ...emailContent });
 
   return true;
 }
 
 export async function requestPasswordReset(email: string) {
-  const normalizedEmail = normalizeEmail(email);
-
-  if (!normalizedEmail) {
+  if (!normalizeEmail(email)) {
     return;
   }
 
-  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+  const user = await findUserByEmail(email);
 
   if (!user) {
     return;
@@ -189,7 +210,7 @@ export async function requestPasswordReset(email: string) {
   // The full token sent to the user is "tokenId.secret"
   const fullToken = `${tokenId}.${secret}`;
   const emailContent = buildPasswordResetEmail(user.name, fullToken);
-  await sendEmail({ to: normalizedEmail, ...emailContent });
+  await sendEmail({ to: user.email, ...emailContent });
 }
 
 export async function resetPassword(token: string, newPassword: string) {
