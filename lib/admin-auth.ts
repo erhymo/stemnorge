@@ -9,7 +9,6 @@ export const ADMIN_SESSION_COOKIE_NAME = "stemnorge_admin_session";
 const ADMIN_SESSION_TTL_SECONDS = 60 * 60 * 12;
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME?.trim() || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD?.trim() || "";
-const ADMIN_SESSION_SECRET = getAdminSessionSecret();
 
 export type AdminSession = {
   role: "admin";
@@ -59,7 +58,7 @@ export function validateAdminCredentials(username: string, password: string) {
 }
 
 export function createAdminSessionToken(username: string) {
-  return jwt.sign({ role: "admin", username }, ADMIN_SESSION_SECRET, {
+  return jwt.sign({ role: "admin", username }, getAdminSessionSecret(), {
     expiresIn: ADMIN_SESSION_TTL_SECONDS,
   });
 }
@@ -70,7 +69,7 @@ export function verifyAdminSessionToken(token?: string | null) {
   }
 
   try {
-    const payload = jwt.verify(token, ADMIN_SESSION_SECRET);
+    const payload = jwt.verify(token, getAdminSessionSecret());
 
     if (
       typeof payload !== "object" ||

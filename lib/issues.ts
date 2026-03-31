@@ -435,7 +435,7 @@ export async function swapIssueSchedules(issueIdA: number, issueIdB: number, now
 }
 
 export async function publishIssueNow(issueId: number, now = new Date()) {
-  const issue = await getEditablePlannedIssue(issueId, now);
+  await getEditablePlannedIssue(issueId, now);
 
   const activeIssue = await prisma.issue.findFirst({
     where: {

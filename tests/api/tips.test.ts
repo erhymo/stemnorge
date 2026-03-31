@@ -27,7 +27,7 @@ function createResponse() {
       this.body = payload;
       return this;
     },
-    setHeader(_name: string, _value: string | string[]) {
+    setHeader() {
       return this;
     },
     status(code: number) {

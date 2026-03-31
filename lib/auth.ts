@@ -78,7 +78,6 @@ export async function registerUser(email: string, password: string, name: string
   });
 
   return {
-    token: createUserToken(user),
     user: toPublicUser(user),
   };
 }

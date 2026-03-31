@@ -50,7 +50,6 @@ describe("auth", () => {
       data: expect.objectContaining({ name: "Ada", password: "hashed-password", email: "ada@test.no" }),
     });
     expect(result).toEqual({
-      token: "signed-token",
       user: { id: 2, name: "Ada", email: "ada@test.no" },
     });
     expect(sendEmailMock).toHaveBeenCalled();

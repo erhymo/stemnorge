@@ -23,7 +23,7 @@ function createResponse() {
       this.body = payload;
       return this;
     },
-    setHeader(_name: string, _value: string | string[]) {
+    setHeader() {
       return this;
     },
     status(code: number) {
@@ -37,7 +37,7 @@ function createResponse() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  registerUserMock.mockResolvedValue({ token: "jwt-token", user: { id: 1, name: "Ada", email: "ada@test.no" } });
+  registerUserMock.mockResolvedValue({ user: { id: 1, name: "Ada", email: "ada@test.no" } });
 });
 
 describe("POST /api/register", () => {
@@ -80,6 +80,6 @@ describe("POST /api/register", () => {
 
     expect(registerUserMock).toHaveBeenCalledWith("ada@test.no", "hemmelighet1", "Ada");
     expect(res.statusCode).toBe(201);
-    expect(res.body).toEqual({ token: "jwt-token", user: { id: 1, name: "Ada", email: "ada@test.no" } });
+    expect(res.body).toEqual({ ok: true });
   });
 });

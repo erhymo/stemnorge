@@ -42,8 +42,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const result = await registerUser(email, password, name);
-    res.status(201).json(result);
+    await registerUser(email, password, name);
+    res.status(201).json({ ok: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Bruker finnes allerede eller ugyldig data.';
     const status = message.includes('allerede') ? 409 : 400;

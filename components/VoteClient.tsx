@@ -43,7 +43,16 @@ export default function VoteClient({ issue }: VoteClientProps) {
     fetch("/api/my-vote", {
       headers: { Authorization: `Bearer ${storedToken}` },
     })
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => {
+        if (res.status === 401 || res.status === 403) {
+          clearSession();
+          notifySessionChanged();
+          router.replace("/login?next=/vote");
+          return null;
+        }
+
+        return res.ok ? res.json() : null;
+      })
       .then((data) => {
         if (data?.vote?.value) {
           setExistingVote(data.vote.value);
