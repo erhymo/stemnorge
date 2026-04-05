@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import AdminLogoutButton from "@/components/AdminLogoutButton";
-import AdminIssueForm, { toDatetimeLocalValue } from "@/components/AdminIssueForm";
+import AdminIssueForm from "@/components/AdminIssueForm";
 import AdminTipsGenerator from "@/components/AdminTipsGenerator";
 import AdminPlannedIssues from "@/components/AdminPlannedIssues";
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-auth";
@@ -24,6 +24,12 @@ function formatDateTimeLabel(value: string | Date) {
     minute: "2-digit",
     hour12: false,
   }).format(date);
+}
+
+function toDatetimeLocalValue(date: Date) {
+  const pad = (value: number) => value.toString().padStart(2, "0");
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 export default async function AdminPage() {
