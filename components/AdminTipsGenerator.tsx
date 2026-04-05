@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export type AdminTip = {
   topic: string;
@@ -14,6 +14,29 @@ export default function AdminTipsGenerator() {
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("stemnorge:admin-tips");
+      if (saved) {
+        setTips(JSON.parse(saved));
+      }
+    } catch (err) {
+      // Ignorer feil hvis localStorage mangler/feiler
+    }
+  }, []);
+
+  function saveTips(action: AdminTip[] | ((prev: AdminTip[]) => AdminTip[])) {
+    setTips((prev) => {
+      const next = typeof action === "function" ? action(prev) : action;
+      try {
+        localStorage.setItem("stemnorge:admin-tips", JSON.stringify(next));
+      } catch (err) {
+        // Ignorer
+      }
+      return next;
+    });
+  }
+
   async function handleLoadTips() {
     setIsLoadingTips(true);
     setMessage("");
@@ -21,7 +44,7 @@ export default function AdminTipsGenerator() {
       const res = await fetch("/api/admin/issues/generate-tips", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Feil");
-      setTips(data.tips || []);
+      saveTips(data.tips || []);
       setExpandedTopic(null);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Kunne ikke hente tips.");
@@ -48,7 +71,7 @@ export default function AdminTipsGenerator() {
       window.dispatchEvent(new CustomEvent("stemnorge:populate-draft", { detail: { draft: dataDraft.draft } }));
 
       setMessage(`Utkast for "${tip.topic}" er fylt inn i skjemaet under! Husk å se over og opprette saken når du er klar.`);
-      setTips((prev) => prev.filter((t) => t.topic !== tip.topic));
+      saveTips((prev) => prev.filter((t) => t.topic !== tip.topic));
       setExpandedTopic(null);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Feil under generering.");
