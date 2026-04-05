@@ -32,10 +32,11 @@ export async function generateAdminTips(): Promise<AdminTip[]> {
         {
           role: "system",
           content: [
-            "Du er en assistent som foreslår 5 aktuelle politiske eller samfunnsmessige saker i Norge akkurat nå.",
-            "De må være saker som diskuteres mye i norske medier for tiden.",
+            "Du er en assistent for StemNorge som foreslår 5 høyst aktuelle og polariserende politiske eller samfunnsmessige saker i Norge akkurat nå.",
+            "De må være saker som skaper massivt engasjement, sterk uenighet, og som diskuteres mye i norske medier for tiden.",
+            "Fokuser gjerne på 'bomber' eller tunge debatter hvor befolkningen er delt på midten.",
             "Returner kun et JSON-objekt med en nøkkel 'tips' som er en array av objekter.",
-            "Hvert objekt skal ha feltene 'topic' (kort tittel) og 'context' (2-3 setninger med oppsummering av saken)."
+            "Hvert objekt skal ha feltene 'topic' (kort tittel) og 'context' (2-3 setninger med oppsummering av hvorfor saken er så polariserende nå)."
           ].join(" "),
         },
       ],
