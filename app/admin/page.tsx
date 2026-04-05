@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import AdminLogoutButton from "@/components/AdminLogoutButton";
 import AdminIssueForm from "@/components/AdminIssueForm";
+import AdminTipsGenerator from "@/components/AdminTipsGenerator";
 import AdminPlannedIssues from "@/components/AdminPlannedIssues";
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-auth";
 import { getCurrentIssueView, getHistoricalIssueViews, getPlannedIssueRecords } from "@/lib/issues";
@@ -91,7 +92,10 @@ export default async function AdminPage() {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-        <AdminIssueForm />
+        <div className="space-y-6">
+          <AdminTipsGenerator />
+          <AdminIssueForm />
+        </div>
 
         <div className="space-y-6">
           <article className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-8">
