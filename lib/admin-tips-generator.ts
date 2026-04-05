@@ -14,7 +14,8 @@ export async function generateAdminTips(): Promise<AdminTip[]> {
       { topic: "Formuesskatt", context: "Bør formuesskatten fjernes eller senkes?" },
       { topic: "Vindkraft på land", context: "Bør det bygges ut mer vindkraft på land?" },
       { topic: "Alkoholmonopolet", context: "Bør Vinmonopolets enerett beholdes?" },
-      { topic: "Skolemat", context: "Bør det innføres et gratis måltid i grunnskolen?" }
+      { topic: "Skolemat", context: "Bør det innføres et gratis måltid i grunnskolen?" },
+      { topic: "Aktiv dødshjelp", context: "Bør aktiv dødshjelp legaliseres i Norge?" }
     ];
   }
 
@@ -50,10 +51,11 @@ export async function generateAdminTips(): Promise<AdminTip[]> {
         {
           role: "system",
           content: [
-            "Du er en assistent for StemNorge som foreslår 5 høyst aktuelle og polariserende politiske eller samfunnsmessige saker i Norge akkurat nå.",
-            "De må være saker som skaper massivt engasjement, sterk uenighet, og som diskuteres mye i norske medier for tiden.",
-            "Fokuser gjerne på 'bomber' eller tunge debatter hvor befolkningen er delt på midten.",
-            "Returner kun et JSON-objekt med en nøkkel 'tips' som er en array av objekter.",
+            "Du er en assistent for StemNorge som foreslår eksakt 6 høyst aktuelle og polariserende politiske eller samfunnsmessige saker i Norge akkurat nå.",
+            "De 3 første sakene skal være brede, tidløse 'bomber' eller tunge debatter (f.eks. formuesskatt, atomkraft, abort, EU) hvor befolkningen er delt på midten.",
+            "De 3 siste sakene MÅ være basert direkte på nyhetsbildet akkurat nå (fra NRK-overskriftene under).",
+            "Sørg for at alle sakene skaper massivt engasjement og sterk uenighet.",
+            "Returner kun et JSON-objekt med en nøkkel 'tips' som er en array av nøyaktig 6 objekter.",
             "Hvert objekt skal ha feltene 'topic' (kort tittel) og 'context' (2-3 setninger med oppsummering av hvorfor saken er så polariserende nå)."
           ].join(" ") + recentNews,
         },
