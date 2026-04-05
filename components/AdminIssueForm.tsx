@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import type { AdminIssueDraft, DraftGenerationSource } from "@/lib/admin-issue-draft";
@@ -108,6 +108,23 @@ export default function AdminIssueForm({ mode = "create", issueId, initialValues
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (isEditMode) return;
+
+    function handlePopulate(e: Event) {
+      const customEvent = e as CustomEvent<{ draft: AdminIssueDraft }>;
+      const { draft } = customEvent.detail;
+
+      setValues((current) => applyGeneratedDraft(current, draft, slugTouched));
+      setDraftMessage("AI-utkastet fra tips-seksjonen er fylt inn. Gå gjennom feltene og juster før du oppretter saken.");
+
+      document.getElementById("admin-issue-form")?.scrollIntoView({ behavior: "smooth" });
+    }
+
+    window.addEventListener("stemnorge:populate-draft", handlePopulate);
+    return () => window.removeEventListener("stemnorge:populate-draft", handlePopulate);
+  }, [isEditMode, slugTouched]);
+
   function updateValue<K extends keyof AdminIssueFormValues>(field: K, value: AdminIssueFormValues[K]) {
     setValues((current) => ({ ...current, [field]: value }));
   }
@@ -202,7 +219,7 @@ export default function AdminIssueForm({ mode = "create", issueId, initialValues
   const argumentAgainstLength = getTextLength(values.argumentAgainst);
 
   return (
-    <section className="rounded-[2rem] border border-white/10 bg-slate-900/80 p-8 shadow-xl shadow-slate-950/40">
+    <section id="admin-issue-form" className="rounded-[2rem] border border-white/10 bg-slate-900/80 p-8 shadow-xl shadow-slate-950/40">
       <div className="mb-6 space-y-2">
         <p className="text-sm uppercase tracking-[0.3em] text-cyan-200/80">{eyebrow}</p>
         <h2 className="text-2xl text-white">{heading}</h2>

@@ -1,35 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 
 export type AdminTip = {
   topic: string;
   context: string;
 };
-
-function toDatetimeLocalValue(date: Date) {
-  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 16);
-}
-
-function getDefaultDates() {
-  const now = new Date();
-  const nextMonday = new Date(now);
-  const daysUntilMonday = ((8 - nextMonday.getDay()) % 7) || 7;
-
-  nextMonday.setDate(nextMonday.getDate() + daysUntilMonday);
-  nextMonday.setHours(6, 0, 0, 0);
-
-  const closesAt = new Date(nextMonday);
-  closesAt.setDate(closesAt.getDate() + 6);
-  closesAt.setHours(18, 0, 0, 0);
-
-  return {
-    publishedAt: toDatetimeLocalValue(nextMonday),
-    closesAt: toDatetimeLocalValue(closesAt),
-  };
-}
 
 export default function AdminTipsGenerator() {
   const [tips, setTips] = useState<AdminTip[]>([]);
@@ -37,7 +13,6 @@ export default function AdminTipsGenerator() {
   const [generatingFor, setGeneratingFor] = useState<string | null>(null);
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
   const [message, setMessage] = useState("");
-  const router = useRouter();
 
   async function handleLoadTips() {
     setIsLoadingTips(true);
@@ -70,28 +45,11 @@ export default function AdminTipsGenerator() {
         throw new Error(dataDraft.error || "Kunne ikke generere utkast.");
       }
 
-      const { publishedAt, closesAt } = getDefaultDates();
-      const issuePayload = {
-        ...dataDraft.draft,
-        publishedAt,
-        closesAt,
-      };
+      window.dispatchEvent(new CustomEvent("stemnorge:populate-draft", { detail: { draft: dataDraft.draft } }));
 
-      const resCreate = await fetch("/api/admin/issues", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(issuePayload),
-      });
-      const dataCreate = await resCreate.json();
-
-      if (!resCreate.ok) {
-        throw new Error(dataCreate.error || "Kunne ikke opprette saken.");
-      }
-
-      setMessage(`Sak "${dataCreate.issue.slug}" ble opprettet og lagt til i planlagte saker!`);
+      setMessage(`Utkast for "${tip.topic}" er fylt inn i skjemaet under! Husk å se over og opprette saken når du er klar.`);
       setTips((prev) => prev.filter((t) => t.topic !== tip.topic));
       setExpandedTopic(null);
-      router.refresh();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Feil under generering.");
     } finally {
@@ -139,7 +97,7 @@ export default function AdminTipsGenerator() {
                     disabled={generatingFor !== null}
                     className="rounded-full bg-cyan-600 px-4 py-2 font-medium text-white transition hover:bg-cyan-500 disabled:opacity-50"
                   >
-                    {generatingFor === tip.topic ? "Genererer og lagrer..." : "Generer og legg til sak"}
+                    {generatingFor === tip.topic ? "Genererer utkast..." : "Generer utkast og fyll inn i skjema"}
                   </button>
                 </div>
               )}
