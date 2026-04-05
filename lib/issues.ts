@@ -129,6 +129,7 @@ function calculatePercentages(forVotes: number, againstVotes: number) {
 
 function formatDateTime(date: Date) {
   return new Intl.DateTimeFormat("nb-NO", {
+    timeZone: "Europe/Oslo",
     day: "2-digit",
     month: "2-digit",
     year: "numeric",

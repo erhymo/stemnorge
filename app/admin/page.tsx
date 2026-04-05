@@ -17,6 +17,7 @@ function formatDateTimeLabel(value: string | Date) {
   const date = value instanceof Date ? value : new Date(value);
 
   return new Intl.DateTimeFormat("nb-NO", {
+    timeZone: "Europe/Oslo",
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
