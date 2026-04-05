@@ -18,6 +18,24 @@ export async function generateAdminTips(): Promise<AdminTip[]> {
     ];
   }
 
+  let recentNews = "";
+  try {
+    const rssResponse = await fetch("https://www.nrk.no/toppsaker.rss", { cache: "no-store" });
+    if (rssResponse.ok) {
+      const xml = await rssResponse.text();
+      const titles = Array.from(xml.matchAll(/<title>(.*?)<\/title>/g))
+        .map((m) => m[1])
+        .filter((t) => t !== "NRK" && t !== "NRK logo")
+        .slice(0, 15)
+        .join(" | ");
+      if (titles) {
+        recentNews = `\n\nHer er noen av dagens toppsaker fra NRK for inspirasjon til hva som er aktuelt AKKURAT NÅ (April 2026): ${titles}`;
+      }
+    }
+  } catch (e) {
+    // Ignorer feil, fortsett uten nyhetsoppdatering
+  }
+
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -37,7 +55,7 @@ export async function generateAdminTips(): Promise<AdminTip[]> {
             "Fokuser gjerne på 'bomber' eller tunge debatter hvor befolkningen er delt på midten.",
             "Returner kun et JSON-objekt med en nøkkel 'tips' som er en array av objekter.",
             "Hvert objekt skal ha feltene 'topic' (kort tittel) og 'context' (2-3 setninger med oppsummering av hvorfor saken er så polariserende nå)."
-          ].join(" "),
+          ].join(" ") + recentNews,
         },
       ],
     }),

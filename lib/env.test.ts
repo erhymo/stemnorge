@@ -68,6 +68,6 @@ describe("env", () => {
   it("bruker standardmodell når OPENAI_MODEL mangler", () => {
     delete process.env.OPENAI_MODEL;
 
-    expect(getOpenAiModel()).toBe("gpt-4.1-mini");
+    expect(getOpenAiModel()).toBe("gpt-4o");
   });
 });

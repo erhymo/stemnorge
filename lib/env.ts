@@ -57,5 +57,5 @@ export function getOpenAiApiKey() {
 }
 
 export function getOpenAiModel() {
-  return readEnv("OPENAI_MODEL") || "gpt-4.1-mini";
+  return readEnv("OPENAI_MODEL") || "gpt-4o";
 }
