@@ -3,11 +3,11 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import AdminLogoutButton from "@/components/AdminLogoutButton";
-import AdminIssueForm from "@/components/AdminIssueForm";
+import AdminIssueForm, { toDatetimeLocalValue } from "@/components/AdminIssueForm";
 import AdminTipsGenerator from "@/components/AdminTipsGenerator";
 import AdminPlannedIssues from "@/components/AdminPlannedIssues";
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-auth";
-import { getCurrentIssueView, getHistoricalIssueViews, getPlannedIssueRecords } from "@/lib/issues";
+import { getCurrentIssueView, getHistoricalIssueViews, getPlannedIssueRecords, getNextAvailableIssueDates } from "@/lib/issues";
 import { prisma } from "@/lib/prisma";
 import { getAgendaTipsForAdmin } from "@/lib/tips";
 
@@ -34,13 +34,14 @@ export default async function AdminPage() {
     redirect("/admin/login");
   }
 
-  const [currentIssue, plannedIssues, historicalIssues, agendaTipsResult, totalUsers, verifiedUsers] = await Promise.all([
+  const [currentIssue, plannedIssues, historicalIssues, agendaTipsResult, totalUsers, verifiedUsers, nextAvailableDates] = await Promise.all([
     getCurrentIssueView(),
     getPlannedIssueRecords(),
     getHistoricalIssueViews(),
     getAgendaTipsForAdmin(),
     prisma.user.count(),
     prisma.user.count({ where: { emailVerified: true } }),
+    getNextAvailableIssueDates(),
   ]);
   const { tips: agendaTips, unavailable: agendaTipsUnavailable } = agendaTipsResult;
 
@@ -94,7 +95,13 @@ export default async function AdminPage() {
       <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="space-y-6">
           <AdminTipsGenerator />
-          <AdminIssueForm />
+          <AdminIssueForm
+            key={nextAvailableDates.publishedAt.toISOString()}
+            initialValues={{
+              publishedAt: toDatetimeLocalValue(nextAvailableDates.publishedAt),
+              closesAt: toDatetimeLocalValue(nextAvailableDates.closesAt),
+            }}
+          />
         </div>
 
         <div className="space-y-6">

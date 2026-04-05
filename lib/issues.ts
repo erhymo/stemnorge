@@ -374,6 +374,32 @@ async function getEditablePlannedIssue(issueId: number, now = new Date()) {
   return issue;
 }
 
+export async function getNextAvailableIssueDates(now = new Date()) {
+  const currentIssue = await getCurrentIssueRecord(now);
+  const plannedIssues = await getPlannedIssueRecords(now);
+
+  const monday = getMondayBase(now);
+  const defaultPublishedAt = withTime(shiftDays(monday, 7), 6);
+  const defaultClosesAt = withTime(shiftDays(monday, 13), 18);
+
+  let maxClosesAt = currentIssue ? currentIssue.closesAt : now;
+  for (const issue of plannedIssues) {
+    if (issue.closesAt > maxClosesAt) {
+      maxClosesAt = issue.closesAt;
+    }
+  }
+
+  if (maxClosesAt < defaultPublishedAt) {
+    return { publishedAt: defaultPublishedAt, closesAt: defaultClosesAt };
+  }
+
+  const nextBase = getMondayBase(maxClosesAt);
+  const nextPublishedAt = withTime(shiftDays(nextBase, 7), 6);
+  const nextClosesAt = withTime(shiftDays(nextBase, 13), 18);
+
+  return { publishedAt: nextPublishedAt, closesAt: nextClosesAt };
+}
+
 export async function createIssue(input: CreateIssueInput) {
   await ensureSeedIssues();
 

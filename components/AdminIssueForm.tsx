@@ -190,7 +190,7 @@ export default function AdminIssueForm({ mode = "create", issueId, initialValues
       setMessage(successMessage);
 
       if (!isEditMode) {
-        setValues(getInitialFormValues());
+        setValues(getInitialFormValues(initialValues));
         setSlugTouched(false);
         setDraftTopic("");
         setDraftContext("");
