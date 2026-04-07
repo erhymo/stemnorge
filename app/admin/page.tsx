@@ -9,6 +9,7 @@ import AdminPlannedIssues from "@/components/AdminPlannedIssues";
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-auth";
 import { getCurrentIssueView, getHistoricalIssueViews, getPlannedIssueRecords, getNextAvailableIssueDates } from "@/lib/issues";
 import { prisma } from "@/lib/prisma";
+import { getSiteVisitStats } from "@/lib/site-analytics";
 import { getAgendaTipsForAdmin } from "@/lib/tips";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +42,7 @@ export default async function AdminPage() {
     redirect("/admin/login");
   }
 
-  const [currentIssue, plannedIssues, historicalIssues, agendaTipsResult, totalUsers, verifiedUsers, nextAvailableDates] = await Promise.all([
+  const [currentIssue, plannedIssues, historicalIssues, agendaTipsResult, totalUsers, verifiedUsers, nextAvailableDates, siteVisitStats] = await Promise.all([
     getCurrentIssueView(),
     getPlannedIssueRecords(),
     getHistoricalIssueViews(),
@@ -49,6 +50,7 @@ export default async function AdminPage() {
     prisma.user.count(),
     prisma.user.count({ where: { emailVerified: true } }),
     getNextAvailableIssueDates(),
+    getSiteVisitStats(),
   ]);
   const { tips: agendaTips, unavailable: agendaTipsUnavailable } = agendaTipsResult;
 
@@ -86,7 +88,7 @@ export default async function AdminPage() {
         </p>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-6">
           <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Registrerte brukere</p>
           <p className="mt-2 text-4xl font-semibold text-white">{totalUsers}</p>
@@ -96,6 +98,16 @@ export default async function AdminPage() {
           <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Verifiserte brukere</p>
           <p className="mt-2 text-4xl font-semibold text-emerald-200">{verifiedUsers}</p>
           <p className="mt-1 text-sm text-slate-400">har bekreftet e-post</p>
+        </article>
+        <article className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-6">
+          <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Besøk totalt</p>
+          <p className="mt-2 text-4xl font-semibold text-cyan-200">{siteVisitStats.totalVisits}</p>
+          <p className="mt-1 text-sm text-slate-400">registrerte besøk til offentlige sider</p>
+        </article>
+        <article className="rounded-[2rem] border border-white/10 bg-slate-900/70 p-6">
+          <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Besøk denne måneden</p>
+          <p className="mt-2 text-4xl font-semibold text-cyan-100">{siteVisitStats.monthlyVisits}</p>
+          <p className="mt-1 text-sm text-slate-400">omtrent ett besøk per nettleser per 30 min</p>
         </article>
       </section>
 

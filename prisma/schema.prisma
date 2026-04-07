@@ -67,6 +67,15 @@ model AgendaTip {
   @@index([status, createdAt])
 }
 
+model SiteVisit {
+  id        Int      @id @default(autoincrement())
+  pathname  String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([pathname, createdAt])
+}
+
 model Vote {
   id        Int      @id @default(autoincrement())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
