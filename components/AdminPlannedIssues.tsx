@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import AdminIssueForm, { toDatetimeLocalValue } from "@/components/AdminIssueForm";
+import AdminIssueForm from "@/components/AdminIssueForm";
+import { toDatetimeLocalValueInOslo } from "@/lib/oslo-time";
 
 type PlannedIssueItem = {
   id: number;
@@ -213,8 +214,8 @@ export default function AdminPlannedIssues({ issues }: AdminPlannedIssuesProps) 
                         argumentAgainst: issue.argumentAgainst,
                         supportLabel: issue.supportLabel,
                         opposeLabel: issue.opposeLabel,
-                        publishedAt: toDatetimeLocalValue(new Date(issue.publishedAt)),
-                        closesAt: toDatetimeLocalValue(new Date(issue.closesAt)),
+                        publishedAt: toDatetimeLocalValueInOslo(new Date(issue.publishedAt)),
+                        closesAt: toDatetimeLocalValueInOslo(new Date(issue.closesAt)),
                       }}
                       onCancel={() => setEditingIssueId(null)}
                       onSuccess={(message) => {

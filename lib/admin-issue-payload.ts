@@ -1,5 +1,6 @@
 import type { CreateIssueInput } from "@/lib/issues";
 import { toAdminIssueSlug } from "@/lib/admin-issue-draft";
+import { parseOsloDatetimeLocal } from "@/lib/oslo-time";
 
 function readRequiredString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
@@ -10,12 +11,7 @@ function readOptionalString(value: unknown) {
 }
 
 function readDate(value: unknown) {
-  if (typeof value !== "string" || !value.trim()) {
-    return null;
-  }
-
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
+  return parseOsloDatetimeLocal(value);
 }
 
 export function parseAdminIssueInput(body: unknown): CreateIssueInput | null {

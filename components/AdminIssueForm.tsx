@@ -10,6 +10,7 @@ import {
   ISSUE_BACKGROUND_MIN_LENGTH,
   ISSUE_OVERVIEW_MIN_LENGTH,
 } from "@/lib/issue-text-guidelines";
+import { addDaysInCalendarDate, buildOsloDateTime, getMondayBaseInOslo, toDatetimeLocalValueInOslo } from "@/lib/oslo-time";
 
 export type AdminIssueFormValues = {
   title: string;
@@ -33,23 +34,10 @@ type AdminIssueFormProps = {
   onSuccess?: (message: string) => void;
 };
 
-export function toDatetimeLocalValue(date: Date) {
-  const pad = (value: number) => value.toString().padStart(2, "0");
-
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
 function getDefaultFormValues(): AdminIssueFormValues {
-  const now = new Date();
-  const nextMonday = new Date(now);
-  const daysUntilMonday = ((8 - nextMonday.getDay()) % 7) || 7;
-
-  nextMonday.setDate(nextMonday.getDate() + daysUntilMonday);
-  nextMonday.setHours(6, 0, 0, 0);
-
-  const closesAt = new Date(nextMonday);
-  closesAt.setDate(closesAt.getDate() + 6);
-  closesAt.setHours(18, 0, 0, 0);
+  const nextMonday = addDaysInCalendarDate(getMondayBaseInOslo(new Date()), 7);
+  const publishedAt = buildOsloDateTime(nextMonday, 6)!;
+  const closesAt = buildOsloDateTime(addDaysInCalendarDate(nextMonday, 6), 18)!;
 
   return {
     title: "",
@@ -61,8 +49,8 @@ function getDefaultFormValues(): AdminIssueFormValues {
     argumentAgainst: "",
     supportLabel: "For",
     opposeLabel: "Mot",
-    publishedAt: toDatetimeLocalValue(nextMonday),
-    closesAt: toDatetimeLocalValue(closesAt),
+    publishedAt: toDatetimeLocalValueInOslo(publishedAt),
+    closesAt: toDatetimeLocalValueInOslo(closesAt),
   };
 }
 

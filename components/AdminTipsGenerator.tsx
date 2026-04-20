@@ -20,7 +20,7 @@ export default function AdminTipsGenerator() {
       if (saved) {
         setTips(JSON.parse(saved));
       }
-    } catch (err) {
+    } catch {
       // Ignorer feil hvis localStorage mangler/feiler
     }
   }, []);
@@ -30,7 +30,7 @@ export default function AdminTipsGenerator() {
       const next = typeof action === "function" ? action(prev) : action;
       try {
         localStorage.setItem("stemnorge:admin-tips", JSON.stringify(next));
-      } catch (err) {
+      } catch {
         // Ignorer
       }
       return next;

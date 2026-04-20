@@ -33,7 +33,7 @@ export async function generateAdminTips(): Promise<AdminTip[]> {
         recentNews = `\n\nHer er noen av dagens toppsaker fra NRK for inspirasjon til hva som er aktuelt AKKURAT NÅ (April 2026): ${titles}`;
       }
     }
-  } catch (e) {
+  } catch {
     // Ignorer feil, fortsett uten nyhetsoppdatering
   }
 

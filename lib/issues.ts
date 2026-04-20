@@ -6,6 +6,7 @@ import {
   ISSUE_BACKGROUND_MIN_LENGTH,
   ISSUE_OVERVIEW_MIN_LENGTH,
 } from "@/lib/issue-text-guidelines";
+import { addDaysInCalendarDate, buildOsloDateTime, getMondayBaseInOslo } from "@/lib/oslo-time";
 import { prisma } from "@/lib/prisma";
 
 type IssueSource = PublishedIssue["sources"][number];
@@ -59,31 +60,10 @@ function ensureMinimumTextLength(value: string, minLength: number, label: string
   }
 }
 
-function getMondayBase(now = new Date()) {
-  const monday = new Date(now);
-  const day = monday.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  monday.setDate(monday.getDate() + diff);
-  monday.setHours(0, 0, 0, 0);
-  return monday;
-}
-
-function shiftDays(date: Date, days: number) {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
-}
-
-function withTime(date: Date, hours: number) {
-  const next = new Date(date);
-  next.setHours(hours, 0, 0, 0);
-  return next;
-}
-
 function getSeedIssues(): SeedIssue[] {
-  const monday = getMondayBase();
-  const currentPublishedAt = withTime(monday, 6);
-  const currentClosesAt = withTime(shiftDays(monday, 6), 18);
+  const monday = getMondayBaseInOslo();
+  const currentPublishedAt = buildOsloDateTime(monday, 6)!;
+  const currentClosesAt = buildOsloDateTime(addDaysInCalendarDate(monday, 6), 18)!;
 
   return [
     {
@@ -93,8 +73,8 @@ function getSeedIssues(): SeedIssue[] {
     },
     ...historicalIssues.map((issue, index) => {
       const offset = (index + 1) * -7;
-      const publishedAt = withTime(shiftDays(monday, offset), 6);
-      const closesAt = withTime(shiftDays(monday, offset + 6), 18);
+      const publishedAt = buildOsloDateTime(addDaysInCalendarDate(monday, offset), 6)!;
+      const closesAt = buildOsloDateTime(addDaysInCalendarDate(monday, offset + 6), 18)!;
 
       return {
         ...issue,
@@ -379,9 +359,9 @@ export async function getNextAvailableIssueDates(now = new Date()) {
   const currentIssue = await getCurrentIssueRecord(now);
   const plannedIssues = await getPlannedIssueRecords(now);
 
-  const monday = getMondayBase(now);
-  const defaultPublishedAt = withTime(shiftDays(monday, 7), 6);
-  const defaultClosesAt = withTime(shiftDays(monday, 13), 18);
+  const monday = getMondayBaseInOslo(now);
+  const defaultPublishedAt = buildOsloDateTime(addDaysInCalendarDate(monday, 7), 6)!;
+  const defaultClosesAt = buildOsloDateTime(addDaysInCalendarDate(monday, 13), 18)!;
 
   let maxClosesAt = currentIssue ? currentIssue.closesAt : now;
   for (const issue of plannedIssues) {
@@ -394,9 +374,9 @@ export async function getNextAvailableIssueDates(now = new Date()) {
     return { publishedAt: defaultPublishedAt, closesAt: defaultClosesAt };
   }
 
-  const nextBase = getMondayBase(maxClosesAt);
-  const nextPublishedAt = withTime(shiftDays(nextBase, 7), 6);
-  const nextClosesAt = withTime(shiftDays(nextBase, 13), 18);
+  const nextBase = getMondayBaseInOslo(maxClosesAt);
+  const nextPublishedAt = buildOsloDateTime(addDaysInCalendarDate(nextBase, 7), 6)!;
+  const nextClosesAt = buildOsloDateTime(addDaysInCalendarDate(nextBase, 13), 18)!;
 
   return { publishedAt: nextPublishedAt, closesAt: nextClosesAt };
 }
@@ -477,9 +457,9 @@ export async function publishIssueNow(issueId: number, now = new Date()) {
     throw new Error(`Kan ikke publisere nå — saken "${activeIssue.question}" er allerede aktiv.`);
   }
 
-  const monday = getMondayBase(now);
-  const sundayEvening = withTime(shiftDays(monday, 6), 18);
-  const newClosesAt = sundayEvening > now ? sundayEvening : withTime(shiftDays(monday, 13), 18);
+  const monday = getMondayBaseInOslo(now);
+  const sundayEvening = buildOsloDateTime(addDaysInCalendarDate(monday, 6), 18)!;
+  const newClosesAt = sundayEvening > now ? sundayEvening : buildOsloDateTime(addDaysInCalendarDate(monday, 13), 18)!;
 
   return prisma.issue.update({
     where: { id: issueId },

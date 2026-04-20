@@ -37,7 +37,7 @@ vi.mock("@/lib/content", () => ({
   historicalIssues: [],
 }));
 
-import { deletePlannedIssue, updatePlannedIssue } from "./issues";
+import { deletePlannedIssue, getNextAvailableIssueDates, updatePlannedIssue } from "./issues";
 
 const LONG_OVERVIEW =
   "Dette er en lengre oversikt som forklarer saken tydelig nok til at leseren forstår hva spørsmålet gjelder, hvorfor det er relevant, og hvilke hensyn som bør være med i vurderingen før en stemmer.";
@@ -92,6 +92,16 @@ beforeEach(() => {
 });
 
 describe("issue mutations", () => {
+  it("foreslår neste publisering i norsk tid", async () => {
+    prismaMock.issue.findFirst.mockResolvedValue(null);
+    prismaMock.issue.findMany.mockResolvedValue([]);
+
+    const result = await getNextAvailableIssueDates(new Date("2026-04-19T18:30:00.000Z"));
+
+    expect(result.publishedAt.toISOString()).toBe("2026-04-20T04:00:00.000Z");
+    expect(result.closesAt.toISOString()).toBe("2026-04-26T16:00:00.000Z");
+  });
+
   it("oppdaterer en planlagt sak og ekskluderer seg selv fra overlappssjekken", async () => {
     const existingIssue = createIssueRecord();
     prismaMock.issue.findUnique.mockResolvedValueOnce(existingIssue).mockResolvedValueOnce(existingIssue);

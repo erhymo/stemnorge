@@ -8,6 +8,7 @@ import AdminTipsGenerator from "@/components/AdminTipsGenerator";
 import AdminPlannedIssues from "@/components/AdminPlannedIssues";
 import { ADMIN_SESSION_COOKIE_NAME, verifyAdminSessionToken } from "@/lib/admin-auth";
 import { getCurrentIssueView, getHistoricalIssueViews, getPlannedIssueRecords, getNextAvailableIssueDates } from "@/lib/issues";
+import { toDatetimeLocalValueInOslo } from "@/lib/oslo-time";
 import { prisma } from "@/lib/prisma";
 import { getSiteVisitStats } from "@/lib/site-analytics";
 import { getAgendaTipsForAdmin } from "@/lib/tips";
@@ -26,12 +27,6 @@ function formatDateTimeLabel(value: string | Date) {
     minute: "2-digit",
     hour12: false,
   }).format(date);
-}
-
-function toDatetimeLocalValue(date: Date) {
-  const pad = (value: number) => value.toString().padStart(2, "0");
-
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 export default async function AdminPage() {
@@ -117,8 +112,8 @@ export default async function AdminPage() {
           <AdminIssueForm
             key={nextAvailableDates.publishedAt.toISOString()}
             initialValues={{
-              publishedAt: toDatetimeLocalValue(nextAvailableDates.publishedAt),
-              closesAt: toDatetimeLocalValue(nextAvailableDates.closesAt),
+              publishedAt: toDatetimeLocalValueInOslo(nextAvailableDates.publishedAt),
+              closesAt: toDatetimeLocalValueInOslo(nextAvailableDates.closesAt),
             }}
           />
         </div>
