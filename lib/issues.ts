@@ -192,7 +192,7 @@ async function toIssueView(issue: Issue, now = new Date()): Promise<IssueView> {
     slug: issue.slug,
     title: issue.title,
     question: issue.question,
-    periodLabel: issue.periodLabel,
+    periodLabel: formatIssuePeriodLabel(issue.publishedAt, issue.closesAt),
     overview: issue.overview,
     background: issue.background,
     argumentFor: issue.argumentFor,

@@ -37,7 +37,7 @@ vi.mock("@/lib/content", () => ({
   historicalIssues: [],
 }));
 
-import { deletePlannedIssue, getNextAvailableIssueDates, updatePlannedIssue } from "./issues";
+import { deletePlannedIssue, getCurrentIssueView, getNextAvailableIssueDates, updatePlannedIssue } from "./issues";
 
 const LONG_OVERVIEW =
   "Dette er en lengre oversikt som forklarer saken tydelig nok til at leseren forstår hva spørsmålet gjelder, hvorfor det er relevant, og hvilke hensyn som bør være med i vurderingen før en stemmer.";
@@ -92,6 +92,21 @@ beforeEach(() => {
 });
 
 describe("issue mutations", () => {
+  it("viser periodLabel basert på faktiske tider, ikke lagret streng", async () => {
+    prismaMock.issue.findFirst.mockResolvedValue(
+      createIssueRecord({
+        periodLabel: "Publisert 20.04.2026, 08:00 · Resultat 26.04.2026, 20:00",
+        publishedAt: new Date("2026-04-20T04:00:00.000Z"),
+        closesAt: new Date("2026-04-26T16:00:00.000Z"),
+      }),
+    );
+    prismaMock.vote.count.mockResolvedValue(0);
+
+    const result = await getCurrentIssueView(new Date("2026-04-20T10:00:00.000Z"));
+
+    expect(result?.periodLabel).toBe("Publisert 20.04.2026, 06:00 · Resultat 26.04.2026, 18:00");
+  });
+
   it("foreslår neste publisering i norsk tid", async () => {
     prismaMock.issue.findFirst.mockResolvedValue(null);
     prismaMock.issue.findMany.mockResolvedValue([]);
