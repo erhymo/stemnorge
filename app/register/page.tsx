@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 
 import Turnstile from "@/components/Turnstile";
 
-const TURNSTILE_SITE_KEY = "0x4AAAAAACvZnUiXTf3IqMWF";
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() || "";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -19,6 +19,7 @@ export default function RegisterPage() {
 
   const handleTurnstileVerify = useCallback((token: string) => setTurnstileToken(token), []);
   const handleTurnstileExpire = useCallback(() => setTurnstileToken(null), []);
+  const isTurnstileConfigured = Boolean(TURNSTILE_SITE_KEY);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
@@ -36,6 +37,11 @@ export default function RegisterPage() {
 
     if (!acceptedPrivacy) {
       setMessage("Du må bekrefte at du har lest personverninformasjonen.");
+      return;
+    }
+
+    if (!isTurnstileConfigured) {
+      setMessage("Registrering er midlertidig utilgjengelig. Prøv igjen senere.");
       return;
     }
 
@@ -161,15 +167,21 @@ export default function RegisterPage() {
             </span>
           </label>
 
-          <Turnstile
-            siteKey={TURNSTILE_SITE_KEY}
-            onVerify={handleTurnstileVerify}
-            onExpire={handleTurnstileExpire}
-          />
+          {isTurnstileConfigured ? (
+            <Turnstile
+              siteKey={TURNSTILE_SITE_KEY}
+              onVerify={handleTurnstileVerify}
+              onExpire={handleTurnstileExpire}
+            />
+          ) : (
+            <p className="rounded-2xl border border-amber-300/30 bg-amber-300/10 px-4 py-3 text-sm text-amber-100">
+              Registrering er midlertidig utilgjengelig fordi bot-verifisering ikke er konfigurert.
+            </p>
+          )}
 
           <button
             type="submit"
-            disabled={isSubmitting || !turnstileToken}
+            disabled={isSubmitting || !isTurnstileConfigured || !turnstileToken}
             className="mt-2 rounded-full bg-cyan-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isSubmitting ? "Registrerer..." : "Opprett konto"}

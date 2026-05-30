@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { registerUser } from '../../lib/auth';
 import { checkRateLimit, getClientIp } from '../../lib/rate-limit';
-import { verifyTurnstileToken } from '../../lib/turnstile';
+import { verifyTurnstileTokenDetailed } from '../../lib/turnstile';
 
 const REGISTER_RATE_LIMIT = { namespace: 'register', maxRequests: 5, windowSeconds: 600 };
 
@@ -22,9 +22,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const { email, password, name, turnstileToken } = req.body ?? {};
 
-  const turnstileOk = await verifyTurnstileToken(turnstileToken);
+  const turnstileResult = await verifyTurnstileTokenDetailed(turnstileToken);
 
-  if (!turnstileOk) {
+  if (!turnstileResult.ok) {
+    console.warn('Registrering stoppet av Turnstile.', {
+      reason: turnstileResult.reason,
+      errorCodes: turnstileResult.errorCodes,
+      hasToken: Boolean(turnstileToken),
+    });
     res.status(400).json({ error: 'Verifisering feilet. Prøv å laste siden på nytt.' });
     return;
   }

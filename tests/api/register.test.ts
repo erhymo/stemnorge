@@ -2,11 +2,13 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { registerUserMock } = vi.hoisted(() => ({
+const { registerUserMock, verifyTurnstileTokenDetailedMock } = vi.hoisted(() => ({
   registerUserMock: vi.fn(),
+  verifyTurnstileTokenDetailedMock: vi.fn(),
 }));
 
 vi.mock("../../lib/auth", () => ({ registerUser: registerUserMock }));
+vi.mock("../../lib/turnstile", () => ({ verifyTurnstileTokenDetailed: verifyTurnstileTokenDetailedMock }));
 
 import handler from "../../pages/api/register";
 
@@ -38,6 +40,7 @@ function createResponse() {
 beforeEach(() => {
   vi.clearAllMocks();
   registerUserMock.mockResolvedValue({ user: { id: 1, name: "Ada", email: "ada@test.no" } });
+  verifyTurnstileTokenDetailedMock.mockResolvedValue({ ok: true });
 });
 
 describe("POST /api/register", () => {
@@ -59,6 +62,21 @@ describe("POST /api/register", () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.body).toEqual({ error: "Navn, e-post og passord er påkrevd." });
+  });
+
+  it("returnerer 400 når Turnstile-verifisering feiler", async () => {
+    verifyTurnstileTokenDetailedMock.mockResolvedValue({ ok: false, reason: "provider-error" });
+    const req = {
+      method: "POST",
+      body: { email: "ada@test.no", password: "hemmelighet1", name: "Ada", turnstileToken: "ugyldig" },
+    } as NextApiRequest;
+    const res = createResponse() as NextApiResponse & { body: unknown; statusCode: number };
+
+    await handler(req, res);
+
+    expect(registerUserMock).not.toHaveBeenCalled();
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toEqual({ error: "Verifisering feilet. Prøv å laste siden på nytt." });
   });
 
   it("returnerer 409 når e-posten allerede har konto", async () => {
