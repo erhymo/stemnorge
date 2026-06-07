@@ -1,9 +1,67 @@
 import Link from "next/link";
 
 import RichTextBlock from "@/components/RichTextBlock";
-import { getCurrentIssueView, getHistoricalIssueViews } from "@/lib/issues";
+import { getCurrentIssueView, getHistoricalIssueViews, type IssueView } from "@/lib/issues";
 
 export const dynamic = "force-dynamic";
+
+function LatestCompletedIssueCard({ issue }: { issue: IssueView }) {
+  if (issue.supportPercent == null || issue.opposePercent == null) {
+    return null;
+  }
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-cyan-300/20 bg-slate-900/85 shadow-2xl shadow-cyan-950/20 backdrop-blur md:rounded-[2rem]">
+      <div className="border-b border-white/10 bg-gradient-to-r from-cyan-400/12 via-white/5 to-emerald-400/10 p-5 md:p-8">
+        <div className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
+          <span className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-cyan-100">
+            Siste avstemming
+          </span>
+          <span>{issue.periodLabel}</span>
+        </div>
+        <p className="mt-5 text-sm uppercase tracking-[0.3em] text-cyan-200/80">{issue.title}</p>
+        <h2 className="mt-3 text-3xl leading-tight text-white md:text-4xl">{issue.question}</h2>
+      </div>
+
+      <div className="grid gap-6 p-5 md:p-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+        <div>
+          <p className="text-sm uppercase tracking-[0.3em] text-slate-400">Resultat</p>
+          <div className="mt-4 flex items-end gap-4">
+            <div>
+              <p className="text-5xl font-semibold text-emerald-200 md:text-6xl">{issue.supportPercent}%</p>
+              <p className="mt-1 text-sm text-slate-300">{issue.supportLabel}</p>
+            </div>
+            <div className="pb-2 text-2xl text-slate-500">/</div>
+            <div>
+              <p className="text-4xl font-semibold text-rose-200 md:text-5xl">{issue.opposePercent}%</p>
+              <p className="mt-1 text-sm text-slate-300">{issue.opposeLabel}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="h-4 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-emerald-300 to-cyan-300"
+              style={{ width: `${issue.supportPercent}%` }}
+            />
+          </div>
+          <div className="flex justify-between text-xs uppercase tracking-[0.22em] text-slate-400">
+            <span>{issue.supportLabel}</span>
+            <span>{issue.opposeLabel}</span>
+          </div>
+          {issue.resultSummary && <p className="text-sm leading-7 text-slate-300">{issue.resultSummary}</p>}
+          <Link
+            href={`/historie/${issue.slug}`}
+            className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-400/5 px-5 py-2.5 text-sm font-semibold text-cyan-100 transition hover:border-cyan-200 hover:text-white"
+          >
+            Se hele saken →
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default async function Home() {
   const [currentIssue, historicalIssues] = await Promise.all([
@@ -24,6 +82,7 @@ export default async function Home() {
             <Link href="/tips" className="rounded-full border border-white/12 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/5">Tips oss om saker</Link>
           </div>
         </section>
+        {lastIssue && <LatestCompletedIssueCard issue={lastIssue} />}
       </div>
     );
   }
